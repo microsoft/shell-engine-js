@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "es5",
+      "ES2015"
+    ],
+    "rootDir": ".",
+    "baseUrl": ".",
+    "outDir": "../out",
+
+    "sourceMap": true,
+    "removeComments": true,
+    "pretty": true,
+    "incremental": true,
+    "strict": true
+  },
+  "include": [
+    "./**/*",
+    "../typings/js-shell-engine.d.ts"
+  ],
+}
