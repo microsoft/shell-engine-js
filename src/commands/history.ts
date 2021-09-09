@@ -7,7 +7,7 @@ export class HistoryCommand implements ICommand {
   ) {
   }
 
-  async run(write: (data: string) => void, ...args: string[]): Promise<number> {
+  async run(write: (data: string) => void, ...argv: string[]): Promise<number> {
     write(this.historyRegistry.history.join('\n\r'));
     return 0;
   }

@@ -73,13 +73,13 @@ export class Shell extends Disposable implements ShellApi {
 
   private async _runCommand(input: string) {
     this.historyRegistry.history.push(input);
-    const name = input.trim().split(' ')[0];
+    const argv = input.trim().split(' ');
+    const name = argv[0];
     if (name.length > 0) {
       this._onDidWriteData.fire('\n\r');
       const command = this.commandRegistry.commands.get(name);
       if (command) {
-        // TODO: Args
-        command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...[]);
+        command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
         return;
       }
       this._onDidWriteData.fire(`${name}: command not found`);
