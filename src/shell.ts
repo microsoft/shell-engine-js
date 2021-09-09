@@ -1,6 +1,9 @@
+import { CommandRegistry } from "./commandRegistry";
+import { HistoryRegistry } from "./historyRegistry";
 import { IDisposable, Shell as ShellApi } from "js-shell-engine";
 import { EventEmitter } from "./events";
 import { Disposable, toDisposable } from "./lifecycle";
+import { HistoryCommand } from "./commands/history";
 
 declare global {
   const console: {
@@ -16,6 +19,9 @@ export class Shell extends Disposable implements ShellApi {
   };
   promptInput: string = '';
 
+  private commandRegistry = new CommandRegistry();
+  private historyRegistry = new HistoryRegistry();
+
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
   private _onDidChangePromptInput = new EventEmitter<string>();
@@ -23,19 +29,23 @@ export class Shell extends Disposable implements ShellApi {
   private _onDidWriteData = new EventEmitter<string>();
   readonly onDidWriteData = this._onDidWriteData.event;
 
+  constructor() {
+    super();
+    this.commandRegistry.registerCommand('history', new HistoryCommand(this.historyRegistry));
+  }
+
   start() {
     this._resetPrompt(true);
   }
 
-  async write(data: string) {
+  write(data: string) {
     switch (data) {
       case '\u0003': // Ctrl+C
-        this._onDidWriteData.fire('^C');
+        this._onDidWriteData.fire('\x1b[31m^C\x1b[0m');
         this._resetPrompt();
         break;
       case '\r': // Enter
-        await this._runCommand(this.promptInput);
-        this._setPrompt('');
+        this._runCommand(this.promptInput);
         break;
       case '\u007F': // Backspace (DEL)
         this._onDidWriteData.fire('\b \b');
@@ -62,8 +72,19 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   private async _runCommand(input: string) {
-    console.log(`Run command ${input}`);
-    this._onDidWriteData.fire(`\n\r${input}`);
+    this.historyRegistry.history.push(input);
+    const name = input.trim().split(' ')[0];
+    if (name.length > 0) {
+      this._onDidWriteData.fire('\n\r');
+      const command = this.commandRegistry.commands.get(name);
+      if (command) {
+        // TODO: Args
+        command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...[]);
+        return;
+      }
+      this._onDidWriteData.fire(`${name}: command not found`);
+    }
+    this._setPrompt('');
   }
 
   private _resetPrompt(suppressNewLine: boolean = false) {

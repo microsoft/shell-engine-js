@@ -9,6 +9,10 @@ declare module 'js-shell-engine' {
 
   export type CommandSpec = any;
 
+  export interface ICommand {
+    run(write: (data: string) => void, ...args: string[]): Promise<number>;
+  }
+
   export class Shell implements IDisposable {
     /**
      * The current working directory of the shell, this will be the empty string when no file system
