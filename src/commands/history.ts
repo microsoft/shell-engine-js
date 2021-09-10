@@ -8,7 +8,10 @@ export class HistoryCommand implements ICommand {
   }
 
   async run(write: (data: string) => void, ...argv: string[]): Promise<number> {
-    write(this.historyRegistry.history.join('\n\r'));
+    const padding = this.historyRegistry.entries.length.toString().length + 2;
+    write(this.historyRegistry.entries.map((e, i) => {
+      return `${i.toString().padStart(padding, ' ')}  ${e}`;
+    }).join('\n\r'));
     return 0;
   }
 }

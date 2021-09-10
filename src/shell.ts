@@ -72,7 +72,7 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   private async _runCommand(input: string) {
-    this.historyRegistry.history.push(input);
+    this.historyRegistry.entries.push(input);
     const argv = input.trim().split(' ');
     const name = argv[0];
     if (name.length > 0) {
