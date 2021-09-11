@@ -1,21 +1,21 @@
-import { CommandRegistry } from "./commandRegistry";
-import { HistoryRegistry } from "./historyRegistry";
+import { CommandRegistry } from "./commandRegistry.js";
+import { HistoryRegistry } from "./historyRegistry.js";
 import { IDisposable, Shell as ShellApi } from "js-shell-engine";
-import { EventEmitter } from "./events";
-import { Disposable, toDisposable } from "./lifecycle";
-import { HistoryCommand } from "./commands/history";
+import { EventEmitter } from "./events.js";
+import { Disposable, toDisposable } from "./lifecycle.js";
+import { HistoryCommand } from "./commands/history.js";
 
-declare global {
-  const console: {
-    log(...data: any[]): void;
-  };
-}
+// declare global {
+//   const console: {
+//     log(...data: any[]): void;
+//   };
+// }
 
 export class Shell extends Disposable implements ShellApi {
   cwd: string = '';
   dimensions = {
     rows: 0,
-    cols: 0
+    columns: 0
   };
   promptInput: string = '';
 
@@ -31,6 +31,7 @@ export class Shell extends Disposable implements ShellApi {
 
   constructor() {
     super();
+
     this.commandRegistry.registerCommand('history', new HistoryCommand(this.historyRegistry));
   }
 
@@ -61,8 +62,9 @@ export class Shell extends Disposable implements ShellApi {
     }
   }
 
-  resize(cols: number, rows: number): void {
-
+  resize(columns: number, rows: number): void {
+    this.dimensions.columns = columns;
+    this.dimensions.rows = rows;
   }
 
   registerCommand(name: string, spec: any): IDisposable {
@@ -72,7 +74,7 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   private async _runCommand(input: string) {
-    this.historyRegistry.entries.push(input);
+    this.historyRegistry.addEntry(input);
     const argv = input.trim().split(' ');
     const name = argv[0];
     if (name.length > 0) {
@@ -80,11 +82,11 @@ export class Shell extends Disposable implements ShellApi {
       const command = this.commandRegistry.commands.get(name);
       if (command) {
         command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
-        return;
+      } else {
+        this._onDidWriteData.fire(`${name}: command not found`);
       }
-      this._onDidWriteData.fire(`${name}: command not found`);
     }
-    this._setPrompt('');
+    this._resetPrompt();
   }
 
   private _resetPrompt(suppressNewLine: boolean = false) {

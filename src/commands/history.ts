@@ -1,4 +1,4 @@
-import { HistoryRegistry } from "../historyRegistry";
+import { HistoryRegistry } from "../historyRegistry.js";
 import { ICommand } from "js-shell-engine";
 
 export class HistoryCommand implements ICommand {

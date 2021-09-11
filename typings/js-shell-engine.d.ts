@@ -20,9 +20,18 @@ declare module 'js-shell-engine' {
      */
     readonly cwd: string;
 
+    /**
+     * The current dimensions of the shell, this is set via the {@link Shell.resize} method.
+     */
     readonly dimensions: {
+      /**
+       * The number of rows of the shell.
+       */
       readonly rows: number;
-      readonly cols: number;
+      /**
+       * The number of columns of the shell.
+       */
+      readonly columns: number;
     };
 
     /**
