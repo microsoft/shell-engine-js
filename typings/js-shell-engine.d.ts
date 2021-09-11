@@ -49,7 +49,7 @@ declare module 'js-shell-engine' {
     /**
      * Creates a new shell object.
      */
-    constructor();
+    constructor(options?: IShellOptions);
 
     /**
      * Starts the terminal, this should be called after all event listeners are initialized.
@@ -81,5 +81,9 @@ declare module 'js-shell-engine' {
 
     // TODO: Support plugin environment provider (eg. `echo $ENV_VAR` support)
     // registerEnvironmentProvider(environmentProvider: any): IDisposable
+  }
+
+  export interface IShellOptions {
+    welcomeMessage: string;
   }
 }

@@ -1,6 +1,6 @@
 import { CommandRegistry } from "./commandRegistry.js";
 import { HistoryRegistry } from "./historyRegistry.js";
-import { IDisposable, Shell as ShellApi } from "js-shell-engine";
+import { IDisposable, IShellOptions, Shell as ShellApi } from "js-shell-engine";
 import { EventEmitter } from "./events.js";
 import { Disposable, toDisposable } from "./lifecycle.js";
 import { HistoryCommand } from "./commands/history.js";
@@ -29,13 +29,16 @@ export class Shell extends Disposable implements ShellApi {
   private _onDidWriteData = new EventEmitter<string>();
   readonly onDidWriteData = this._onDidWriteData.event;
 
-  constructor() {
+  constructor(private readonly options?: Readonly<IShellOptions>) {
     super();
 
     this.commandRegistry.registerCommand('history', new HistoryCommand(this.historyRegistry));
   }
 
   start() {
+    if (this.options?.welcomeMessage) {
+      this._onDidWriteData.fire(this.options.welcomeMessage + '\n\r');
+    }
     this._resetPrompt(true);
   }
 
