@@ -45,18 +45,24 @@ export class Shell extends Disposable implements ShellApi {
 
   write(data: string) {
     switch (data) {
-      case '\u0003': // Ctrl+C
+      case '\u0003': // ctrl+C
         this._onDidWriteData.fire('\x1b[31m^C\x1b[0m');
         this._resetPromptInput();
         break;
-      case '\r': // Enter
+      case '\r': // enter
         this._runCommand(this.promptInput);
         break;
-      case '\u007F': // Backspace (DEL)
+      case '\u007F': // backspace (DEL)
         this._onDidWriteData.fire('\b \b');
         if (this.promptInput.length > 0) {
           this._setPromptInput(this.promptInput.substring(0, this.promptInput.length - 1));
         }
+        break;
+      case '\u001b[1;5C': // ctrl+right
+        // TODO: Impl ctrl+right
+        break;
+      case '\u001b[1;5D': // ctrl+left
+      // TODO: Impl ctrl+left
         break;
       default: // Print all other characters for demo
         if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7B)) {
