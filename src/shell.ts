@@ -12,6 +12,8 @@ export class Shell extends Disposable implements ShellApi {
   promptInput: string = '';
   prompt: (() => Promise<string> | string) | string = 'js-shell-engine> ';
 
+  private _promptVariables: Map<string, string | (() => string | Promise<string>)> = new Map();
+
   private commandRegistry = new CommandRegistry();
   get commands() { return this.commandRegistry; }
 
@@ -80,6 +82,10 @@ export class Shell extends Disposable implements ShellApi {
     return this.commandRegistry.registerCommand(name, command);
   }
 
+  setPromptVariable(variable: string, value: string | (() => string | Promise<string>)): void {
+    this._promptVariables.set(variable, value);
+  }
+
   private async _runCommand(input: string) {
     const argv = input.trim().split(' ');
     const name = argv[0];
@@ -98,14 +104,96 @@ export class Shell extends Disposable implements ShellApi {
 
   private async _resetPromptInput(suppressNewLine: boolean = false) {
     this._setPromptInput('');
-    this._onDidWriteData.fire(`${suppressNewLine ? '' : '\r\n'}${await this._getPromptString()}`);
+    this._onDidWriteData.fire(`${suppressNewLine ? '' : '\r\n'}${await this._getNewPromptString()}`);
   }
 
-  private _getPromptString(): Promise<string> | string {
-    if (typeof this.prompt === 'string') {
-      return this.prompt;
+  private async _getNewPromptString(): Promise<string> {
+    const unresolved = typeof this.prompt === 'string' ? this.prompt : await this.prompt();
+    return this._resolveVariables(unresolved);
+  }
+
+  private async _resolveVariables(prompt: string): Promise<string> {
+    // TODO: Extracting should be done once when the prompt changes
+    // Extract variables to resolve
+    const vars: {
+      name: string;
+      start: number;
+      end: number;
+    }[] = [];
+    let state: 'normal' | 'dollar' | 'curly' = 'normal';
+    let earlyExit = false;
+    let start = -1;
+    for (let i = 0; i < prompt.length; i++) {
+      switch (state) {
+        case 'normal':
+          if (prompt[i] === '$') {
+            state = 'dollar';
+            start = i;
+          }
+          break;
+        case 'dollar':
+          if (prompt[i] === '{') {
+            state = 'curly';
+          } else if (prompt[i] === '$') {
+            start = i;
+          } else {
+            state = 'normal';
+          }
+          break;
+        case 'curly':
+          const end = prompt.indexOf('}', i);
+          if (end === -1) {
+            earlyExit = true;
+          }
+          vars.push({
+            name: prompt.substring(start + 2, end),
+            start,
+            end: end + 1
+          });
+          i = end + 1;
+          state = 'normal';
+          break;
+      }
+      if (earlyExit) {
+        break;
+      }
     }
-    return this.prompt();
+
+    // Nothing to resolve
+    if (vars.length === 0) {
+      return prompt;
+    }
+
+    // Resolve all variables asynchronously
+    const promises: Promise<{ variable: string, result: string | undefined }>[] = [];
+    for (let i = 0; i < vars.length; i++) {
+      promises.push(this._resolveVariable(vars[i].name).then(result => ({
+        variable: vars[i].name,
+        result
+      })));
+    }
+    const results = await Promise.all(promises);
+
+    // TODO: Could be optimized
+    // Replace variables in prompt string, in reverse order to avoid shifting indexes
+    for (let i = results.length - 1; i >= 0; i--) {
+      const result = results[i];
+      if (result.result === undefined) {
+        console.warn(`Could not resolve variable ${result.variable}`);
+        continue;
+      }
+      prompt = `${prompt.substring(0, vars[i].start)}${result.result}${prompt.substring(vars[i].end)}`;
+    }
+
+    return prompt;
+  }
+
+  private async _resolveVariable(variable: string): Promise<string | undefined> {
+    const promptVariable = this._promptVariables.get(variable);
+    if (promptVariable === undefined || typeof promptVariable === 'string') {
+      return promptVariable;
+    }
+    return promptVariable();
   }
 
   private _setPromptInput(text: string) {

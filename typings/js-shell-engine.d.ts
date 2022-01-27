@@ -84,6 +84,11 @@ declare module 'js-shell-engine' {
      */
     resize(cols: number, rows: number): void;
 
+    /**
+     * Sets a variable's value to be used by the prompt.
+     */
+    setPromptVariable(variable: string, value: string): void;
+
     // TODO: Support plugin file systems
     // registerFileSystemProvider(fsProvider: any, cwd: string): IDisposable;
 

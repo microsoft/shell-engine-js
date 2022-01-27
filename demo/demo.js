@@ -33,6 +33,14 @@ const shell = new Shell({
 initHistory(shell);
 initTabCompletion(shell);
 
+// Set prompt and register some prompt variables
+shell.prompt = '${hostname}@${time} $'
+shell.setPromptVariable('hostname', 'my-pc');
+shell.setPromptVariable('time', () => {
+  const now = new Date();
+  return `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+})
+
 // Attach terminal <-> shell
 terminal.onData(e => shell.write(e));
 shell.onDidWriteData(e => terminal.write(e));
