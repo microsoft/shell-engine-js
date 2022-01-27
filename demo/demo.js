@@ -33,10 +33,16 @@ const shell = new Shell({
 initHistory(shell);
 initTabCompletion(shell);
 
+// Attach terminal <-> shell
 terminal.onData(e => shell.write(e));
 shell.onDidWriteData(e => terminal.write(e));
 
+// Start the shell
 shell.start();
 
+// Hook up demo buttons
+document.querySelector('#enable-debug-logs').addEventListener('click', () => terminal.options.logLevel = 'debug');
+
+// Setup globals for debugging
 window.term = terminal;
 window.shell = shell;
