@@ -49,6 +49,8 @@ declare module 'js-shell-engine' {
     readonly onDidChangePromptInput: IEvent<string>;
     /** An event that's fired when a command is executed. */
     readonly onDidExecuteCommand: IEvent<IExecutedCommand>;
+    /** An event that's fired when tab is pressed. */
+    readonly onDidPressTab: IEvent<void>;
     /** An event that's fired when the shell writes to the terminal. */
     readonly onDidWriteData: IEvent<string>;
 
@@ -94,6 +96,8 @@ declare module 'js-shell-engine' {
   }
 
   export interface ICommandsNamespace {
+    commandNames: IterableIterator<string>;
+
     /**
      * Registers a command to the shell.
      */

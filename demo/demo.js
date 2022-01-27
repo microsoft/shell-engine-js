@@ -1,5 +1,6 @@
 import { Shell } from '../out/shell.js';
 import { initHistory } from '../out/modules/history.js';
+import { initTabCompletion } from '../out/modules/tabCompletion.js';
 import { Terminal } from 'xterm';
 
 const terminal = new Terminal();
@@ -30,6 +31,7 @@ const shell = new Shell({
 
 // Initialize all modules
 initHistory(shell);
+initTabCompletion(shell);
 
 terminal.onData(e => shell.write(e));
 shell.onDidWriteData(e => terminal.write(e));

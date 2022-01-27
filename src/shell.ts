@@ -21,6 +21,8 @@ export class Shell extends Disposable implements ShellApi {
   readonly onDidChangePromptInput = this._onDidChangePromptInput.event;
   private _onDidExecuteCommand = new EventEmitter<IExecutedCommand>();
   readonly onDidExecuteCommand = this._onDidExecuteCommand.event;
+  private _onDidPressTab = new EventEmitter<void>();
+  readonly onDidPressTab = this._onDidPressTab.event;
   private _onDidWriteData = new EventEmitter<string>();
   readonly onDidWriteData = this._onDidWriteData.event;
 
@@ -57,6 +59,9 @@ export class Shell extends Disposable implements ShellApi {
         break;
       case '\u001b[1;5D': // ctrl+left
       // TODO: Impl ctrl+left
+        break;
+      case '\u0009': // tab
+        this._onDidPressTab.fire();
         break;
       default: // Print all other characters for demo
         if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7B)) {
