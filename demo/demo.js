@@ -1,4 +1,5 @@
 import { Shell } from '../out/shell.js';
+import { initHistory } from '../out/modules/history.js';
 import { Terminal } from 'xterm';
 
 const terminal = new Terminal();
@@ -26,6 +27,9 @@ const shell = new Shell({
     ''
   ].join('\n\r')
 });
+
+// Initialize all modules
+initHistory(shell);
 
 terminal.onData(e => shell.write(e));
 shell.onDidWriteData(e => terminal.write(e));

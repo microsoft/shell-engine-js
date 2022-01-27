@@ -1,15 +1,7 @@
 import { CommandRegistry } from "./commandRegistry.js";
-import { HistoryRegistry } from "./historyRegistry.js";
-import { ICommand, IDisposable, IShellOptions, Shell as ShellApi } from "js-shell-engine";
+import { ICommand, IDisposable, IExecutedCommand, IShellOptions, Shell as ShellApi } from "js-shell-engine";
 import { EventEmitter } from "./events.js";
-import { Disposable, toDisposable } from "./lifecycle.js";
-import { HistoryCommand } from "./commands/history.js";
-
-// declare global {
-//   const console: {
-//     log(...data: any[]): void;
-//   };
-// }
+import { Disposable } from "./lifecycle.js";
 
 export class Shell extends Disposable implements ShellApi {
   cwd: string = '';
@@ -23,13 +15,12 @@ export class Shell extends Disposable implements ShellApi {
   private commandRegistry = new CommandRegistry();
   get commands() { return this.commandRegistry; }
 
-  private historyRegistry = new HistoryRegistry();
-  get history() { return this.historyRegistry; }
-
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
   private _onDidChangePromptInput = new EventEmitter<string>();
   readonly onDidChangePromptInput = this._onDidChangePromptInput.event;
+  private _onDidExecuteCommand = new EventEmitter<IExecutedCommand>();
+  readonly onDidExecuteCommand = this._onDidExecuteCommand.event;
   private _onDidWriteData = new EventEmitter<string>();
   readonly onDidWriteData = this._onDidWriteData.event;
 
@@ -37,8 +28,6 @@ export class Shell extends Disposable implements ShellApi {
     private readonly options?: Readonly<IShellOptions>
   ) {
     super();
-
-    this.commandRegistry.registerCommand('history', new HistoryCommand(this.historyRegistry));
   }
 
   start() {
@@ -87,12 +76,12 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   private async _runCommand(input: string) {
-    this.historyRegistry.addEntry(input);
     const argv = input.trim().split(' ');
     const name = argv[0];
     if (name.length > 0) {
       this._onDidWriteData.fire('\n\r');
       const command = this.commandRegistry.commands.get(name);
+      this._onDidExecuteCommand.fire({ name, argv });
       if (command) {
         command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
       } else {

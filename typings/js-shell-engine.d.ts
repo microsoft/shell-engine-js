@@ -47,6 +47,8 @@ declare module 'js-shell-engine' {
     readonly onDidChangeCwd: IEvent<string>;
     /** An event that's fired when the shell's prompt input changes. */
     readonly onDidChangePromptInput: IEvent<string>;
+    /** An event that's fired when a command is executed. */
+    readonly onDidExecuteCommand: IEvent<IExecutedCommand>;
     /** An event that's fired when the shell writes to the terminal. */
     readonly onDidWriteData: IEvent<string>;
 
@@ -54,11 +56,6 @@ declare module 'js-shell-engine' {
      * Contains APIs related to managing commands.
      */
     readonly commands: ICommandsNamespace;
-
-    /**
-     * Contains APIs related to managing history.
-     */
-    readonly history: IHistoryNamespace;
 
     /**
      * Creates a new shell object.
@@ -103,10 +100,8 @@ declare module 'js-shell-engine' {
     registerCommand(name: string, command: ICommand): IDisposable;
   }
 
-  export interface IHistoryNamespace {
-    /**
-     * A list of history entries that have been run this session.
-     */
-    readonly entries: string[];
+  export interface IExecutedCommand {
+    name: string;
+    argv: string[];
   }
 }

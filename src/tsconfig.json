@@ -10,6 +10,7 @@
     "baseUrl": ".",
     "outDir": "../out",
 
+    "declaration": true,
     "sourceMap": true,
     "removeComments": true,
     "pretty": true,
