@@ -1,4 +1,4 @@
-import { Shell } from "js-shell-engine";
+import { Shell } from "../types.js";
 
 export function initTabCompletion(shell: Shell) {
   shell.onDidPressTab(() => {

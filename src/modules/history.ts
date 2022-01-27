@@ -1,4 +1,4 @@
-import { ICommand, IExecutedCommand, Shell } from "js-shell-engine";
+import { ICommand, IExecutedCommand, Shell } from "../types.js";
 import { Disposable } from "../lifecycle.js";
 
 class HistoryRegistry extends Disposable {

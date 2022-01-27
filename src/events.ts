@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IEvent } from 'js-shell-engine';
+import { IDisposable, IEvent } from './types';
 
 interface IListener<T> {
   (arg: T): void;

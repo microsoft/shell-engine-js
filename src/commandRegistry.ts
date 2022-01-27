@@ -1,5 +1,5 @@
-import { ICommand } from "js-shell-engine";
-import { Disposable, toDisposable } from "./lifecycle.js";
+import { ICommand } from './types.js';
+import { Disposable, toDisposable } from './lifecycle.js';
 
 export class CommandRegistry extends Disposable {
   commands: Map<string, ICommand> = new Map();

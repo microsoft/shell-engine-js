@@ -1,4 +1,4 @@
-import { IDisposable } from 'js-shell-engine';
+import { IDisposable } from './types.js';
 
 /**
  * A base class that can be extended to provide convenience methods for managing the lifecycle of an

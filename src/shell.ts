@@ -1,7 +1,12 @@
 import { CommandRegistry } from "./commandRegistry.js";
-import { ICommand, IDisposable, IExecutedCommand, IShellOptions, Shell as ShellApi } from "js-shell-engine";
+import { ICommand, IDisposable, IShellOptions, Shell as ShellApi } from "./types.js";
 import { EventEmitter } from "./events.js";
 import { Disposable } from "./lifecycle.js";
+
+export interface IExecutedCommand {
+  name: string;
+  argv: string[];
+}
 
 export class Shell extends Disposable implements ShellApi {
   cwd: string = '';
