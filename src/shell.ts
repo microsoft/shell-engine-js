@@ -1,6 +1,6 @@
 import { CommandRegistry } from "./commandRegistry.js";
 import { HistoryRegistry } from "./historyRegistry.js";
-import { IDisposable, IShellOptions, Shell as ShellApi } from "js-shell-engine";
+import { ICommand, IDisposable, IShellOptions, Shell as ShellApi } from "js-shell-engine";
 import { EventEmitter } from "./events.js";
 import { Disposable, toDisposable } from "./lifecycle.js";
 import { HistoryCommand } from "./commands/history.js";
@@ -21,7 +21,10 @@ export class Shell extends Disposable implements ShellApi {
   prompt: (() => Promise<string> | string) | string = 'js-shell-engine> ';
 
   private commandRegistry = new CommandRegistry();
+  get commands() { return this.commandRegistry; }
+
   private historyRegistry = new HistoryRegistry();
+  get history() { return this.historyRegistry; }
 
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
@@ -30,7 +33,9 @@ export class Shell extends Disposable implements ShellApi {
   private _onDidWriteData = new EventEmitter<string>();
   readonly onDidWriteData = this._onDidWriteData.event;
 
-  constructor(private readonly options?: Readonly<IShellOptions>) {
+  constructor(
+    private readonly options?: Readonly<IShellOptions>
+  ) {
     super();
 
     this.commandRegistry.registerCommand('history', new HistoryCommand(this.historyRegistry));
@@ -77,10 +82,8 @@ export class Shell extends Disposable implements ShellApi {
     this.dimensions.rows = rows;
   }
 
-  registerCommand(name: string, spec: any): IDisposable {
-    console.log(`Registered ${name}`);
-    return toDisposable(() => {
-    });
+  registerCommand(name: string, command: ICommand): IDisposable {
+    return this.commandRegistry.registerCommand(name, command);
   }
 
   private async _runCommand(input: string) {

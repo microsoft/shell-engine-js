@@ -7,8 +7,6 @@ declare module 'js-shell-engine' {
     (listener: (arg: T) => any): IDisposable;
   }
 
-  export type CommandSpec = any;
-
   export interface ICommand {
     run(write: (data: string) => void, ...args: string[]): Promise<number>;
   }
@@ -53,6 +51,16 @@ declare module 'js-shell-engine' {
     readonly onDidWriteData: IEvent<string>;
 
     /**
+     * Contains APIs related to managing commands.
+     */
+    readonly commands: ICommandsNamespace;
+
+    /**
+     * Contains APIs related to managing history.
+     */
+    readonly history: IHistoryNamespace;
+
+    /**
      * Creates a new shell object.
      */
     constructor(options?: IShellOptions);
@@ -77,11 +85,6 @@ declare module 'js-shell-engine' {
      */
     resize(cols: number, rows: number): void;
 
-    /**
-     * Registers a command to the shell.
-     */
-    registerCommand(name: string, spec: CommandSpec | (() => Promise<CommandSpec>)): IDisposable;
-
     // TODO: Support plugin file systems
     // registerFileSystemProvider(fsProvider: any, cwd: string): IDisposable;
 
@@ -91,5 +94,19 @@ declare module 'js-shell-engine' {
 
   export interface IShellOptions {
     welcomeMessage: string;
+  }
+
+  export interface ICommandsNamespace {
+    /**
+     * Registers a command to the shell.
+     */
+    registerCommand(name: string, command: ICommand): IDisposable;
+  }
+
+  export interface IHistoryNamespace {
+    /**
+     * A list of history entries that have been run this session.
+     */
+    readonly entries: string[];
   }
 }
