@@ -3,7 +3,9 @@ import { initHistory } from '../out/modules/history.js';
 import { initTabCompletion } from '../out/modules/tabCompletion.js';
 import { Terminal } from 'xterm';
 
-const terminal = new Terminal();
+const terminal = new Terminal({
+  fontFamily: 'Hack, "Fira Code", monospace'
+});
 terminal.open(document.querySelector('#terminal-container'));
 
 const shell = new Shell({
@@ -34,11 +36,11 @@ initHistory(shell);
 initTabCompletion(shell);
 
 // Set prompt and register some prompt variables
-shell.prompt = '${hostname}@${time} $'
+shell.prompt = '\x1b[1;34m${hostname}\x1b[39m@\x1b[32m${time}\x1b[39m>\x1b[0m ';
 shell.setPromptVariable('hostname', 'my-pc');
 shell.setPromptVariable('time', () => {
   const now = new Date();
-  return `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+  return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 })
 
 // Attach terminal <-> shell
