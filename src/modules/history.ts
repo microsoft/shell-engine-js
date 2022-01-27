@@ -1,5 +1,5 @@
-import { ICommand, IExecutedCommand, Shell } from "../types.js";
-import { Disposable } from "../lifecycle.js";
+import { ICommand, IDisposable, IExecutedCommand, Shell } from "../types.js";
+import { Disposable, disposeArray, toDisposable } from "../lifecycle.js";
 
 class HistoryRegistry extends Disposable {
   entries: IExecutedCommand[] = [];
@@ -33,7 +33,10 @@ class HistoryCommand implements ICommand {
 }
 
 export function initHistory(shell: Shell) {
+  const disposables: IDisposable[] = [];
   const registry = new HistoryRegistry();
-  shell.onDidExecuteCommand(e => registry.addEntry(e));
-  shell.commands.registerCommand('history', new HistoryCommand(registry));
+  disposables.push(registry);
+  disposables.push(shell.onDidExecuteCommand(e => registry.addEntry(e)));
+  disposables.push(shell.commands.registerCommand('history', new HistoryCommand(registry)));
+  return toDisposable(() => disposeArray(disposables));
 }

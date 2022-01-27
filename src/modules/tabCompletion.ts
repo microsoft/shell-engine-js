@@ -1,7 +1,7 @@
-import { Shell } from "../types.js";
+import { IDisposable, Shell } from "../types.js";
 
-export function initTabCompletion(shell: Shell) {
-  shell.onDidPressTab(() => {
+export function initTabCompletion(shell: Shell): IDisposable {
+  return shell.onDidPressTab(() => {
     const input = shell.promptInput;
 
     // Get all possible completions matching the first part of the command
