@@ -39,6 +39,12 @@ declare module 'js-shell-engine' {
      */
     readonly promptInput: string;
 
+    /**
+     * Gets or sets the prompt function or string. When this is a string it is printed directly to
+     * the prompt similar to how $PS1 works, when this is a function the return value is printed.
+     */
+    prompt: (() => Promise<string> | string) | string;
+
     /** An event that's fired when the shell's current working directory changes. */
     readonly onDidChangeCwd: IEvent<string>;
     /** An event that's fired when the shell's prompt input changes. */
