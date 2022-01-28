@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "watch": "tsc -w -p src/tsconfig.json",
-    "webpack": "webpack -c ./demo/webpack.config.js -w",
+    "watch-tsc": "tsc -w -p src/tsconfig.json",
+    "watch-webpack": "webpack -c ./demo/webpack.config.js -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
