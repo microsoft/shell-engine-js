@@ -17,10 +17,10 @@ export class Shell extends Disposable implements ShellApi {
   promptInput: string = '';
   prompt: (() => Promise<string> | string) | string = 'js-shell-engine> ';
 
-  private _promptVariables: Map<string, string | (() => string | Promise<string>)> = new Map();
+  private readonly _promptVariables: Map<string, string | (() => string | Promise<string>)> = new Map();
 
-  private commandRegistry = new CommandRegistry();
-  get commands() { return this.commandRegistry; }
+  private readonly _commandRegistry = new CommandRegistry();
+  get commands() { return this._commandRegistry; }
 
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
@@ -84,7 +84,7 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   registerCommand(name: string, command: ICommand): IDisposable {
-    return this.commandRegistry.registerCommand(name, command);
+    return this._commandRegistry.registerCommand(name, command);
   }
 
   setPromptVariable(variable: string, value: string | (() => string | Promise<string>)): void {
@@ -96,7 +96,7 @@ export class Shell extends Disposable implements ShellApi {
     const name = argv[0];
     if (name.length > 0) {
       this._onDidWriteData.fire('\n\r');
-      const command = this.commandRegistry.commands.get(name);
+      const command = this._commandRegistry.commands.get(name);
       this._onDidExecuteCommand.fire({ name, argv });
       if (command) {
         command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
