@@ -17,6 +17,7 @@ export class Shell extends Disposable implements ShellApi {
   promptInput: string = '';
   prompt: (() => Promise<string> | string) | string = 'js-shell-engine> ';
 
+  private _cursor: number = 0;
   private readonly _promptVariables: Map<string, string | (() => string | Promise<string>)> = new Map();
 
   private readonly _commandRegistry = new CommandRegistry();
@@ -59,13 +60,20 @@ export class Shell extends Disposable implements ShellApi {
       if (this.promptInput.length > 0) {
           this._onDidWriteData.fire('\b \b');
           this._setPromptInput(this.promptInput.substring(0, this.promptInput.length - 1));
+          this._cursor--;
         }
+        break;
+      case '\u001b[C': // right
+        this._setCursorPosition(this._cursor + 1);
         break;
       case '\u001b[1;5C': // ctrl+right
         // TODO: Impl ctrl+right
         break;
+      case '\u001b[D': // left
+        this._setCursorPosition(this._cursor - 1);
+        break;
       case '\u001b[1;5D': // ctrl+left
-      // TODO: Impl ctrl+left
+        // TODO: Impl ctrl+left
         break;
       case '\u0009': // tab
         this._onDidPressTab.fire();
@@ -73,8 +81,9 @@ export class Shell extends Disposable implements ShellApi {
       default: // Print all other characters for demo
         if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7B)) {
           this._setPromptInput(this.promptInput + data);
-          this._onDidWriteData.fire(data);
         }
+        this._cursor += data.length;
+        this._onDidWriteData.fire(data);
     }
   }
 
@@ -109,6 +118,7 @@ export class Shell extends Disposable implements ShellApi {
 
   private async _resetPromptInput(suppressNewLine: boolean = false) {
     this._setPromptInput('');
+    this._cursor = 0;
     this._onDidWriteData.fire(`${suppressNewLine ? '' : '\r\n'}${await this._getNewPromptString()}`);
   }
 
@@ -205,6 +215,19 @@ export class Shell extends Disposable implements ShellApi {
     if (this.promptInput !== text) {
       this.promptInput = text;
       this._onDidChangePromptInput.fire(text);
+    }
+  }
+
+  private _setCursorPosition(position: number) {
+    if (position < 0 || position > this.promptInput.length) {
+      return;
+    }
+    if (this._cursor !== position) {
+      const change = this._cursor - position;
+      const code = change > 0 ? 'D' : 'C';
+      const sequence = `\u001b[${code}`.repeat(Math.abs(change));
+      this._onDidWriteData.fire(sequence);
+      this._cursor = position;
     }
   }
 }
