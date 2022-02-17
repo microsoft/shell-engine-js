@@ -76,9 +76,19 @@ export class Shell extends Disposable implements ShellApi {
         // TODO: Impl ctrl+left
         break;
       case '\u0009': // tab
+
+        if (this._cursor !== this.promptInput.length) {
+          throw new Error('NYI'); // TODO: Implement
+        }
+
         this._onDidPressTab.fire();
         break;
       default: // Print all other characters for demo
+
+        if (this._cursor !== this.promptInput.length) {
+          throw new Error('NYI'); // TODO: Implement
+        }
+
         if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7B)) {
           this._setPromptInput(this.promptInput + data);
         }
