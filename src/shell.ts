@@ -67,13 +67,13 @@ export class Shell extends Disposable implements ShellApi {
         this._setCursorPosition(this._cursor + 1);
         break;
       case '\u001b[1;5C': // ctrl+right
-        // TODO: Impl ctrl+right
+      this._moveCursorWordRight();
         break;
       case '\u001b[D': // left
         this._setCursorPosition(this._cursor - 1);
         break;
       case '\u001b[1;5D': // ctrl+left
-        // TODO: Impl ctrl+left
+        this._moveCursorWordLeft();
         break;
       case '\u0009': // tab
 
@@ -229,7 +229,7 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   private _setCursorPosition(position: number) {
-    if (position < 0 || position > this.promptInput.length) {
+    if (position < 0 || position >= this.promptInput.length) {
       return;
     }
     if (this._cursor !== position) {
@@ -239,5 +239,37 @@ export class Shell extends Disposable implements ShellApi {
       this._onDidWriteData.fire(sequence);
       this._cursor = position;
     }
+  }
+
+  private _moveCursorWordLeft() {
+    if (this._cursor === 0) {
+      // TODO: Bell?
+      return;
+    }
+    let position = this._cursor;
+    // Skip any adjacent whitespace
+    while (position > 0 && this.promptInput[position - 1] === ' ') {
+      position--;
+    }
+    while (position > 0 && this.promptInput[position - 1] !== ' ') {
+      position--;
+    }
+    this._setCursorPosition(position);
+  }
+
+  private _moveCursorWordRight() {
+    if (this._cursor === this.promptInput.length - 1) {
+      // TODO: Bell?
+      return;
+    }
+    let position = this._cursor;
+    // Skip any adjacent whitespace
+    while (position < this.promptInput.length - 1 && this.promptInput[position + 1] === ' ') {
+      position++;
+    }
+    while (position < this.promptInput.length - 1 && this.promptInput[position + 1] !== ' ') {
+      position++;
+    }
+    this._setCursorPosition(position);
   }
 }
