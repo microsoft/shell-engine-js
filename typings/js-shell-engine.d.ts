@@ -37,6 +37,11 @@ export class Shell implements IDisposable {
   readonly promptInput: string;
 
   /**
+   * The index of the cursor within {@link promptInput}.
+   */
+  readonly promptInputCursorIndex: number;
+
+  /**
    * Gets or sets the prompt function or string. When this is a string it is printed directly to
    * the prompt similar to how $PS1 works, when this is a function the return value is printed.
    */

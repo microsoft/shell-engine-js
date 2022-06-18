@@ -23,9 +23,9 @@ describe('Shell', () => {
     return lines.join('\n');
   }
 
-  async function assertBuffer(expected: string): Promise<void> {
+  async function assertBuffer(...expectedLines: string[]): Promise<void> {
     await lastWritePromise;
-    strictEqual(termBuffer(), expected);
+    strictEqual(termBuffer(), expectedLines.join('\n'));
   }
 
   beforeEach(() => {
@@ -39,10 +39,104 @@ describe('Shell', () => {
         term.write(e, r);
       });
     });
+    shell.prompt = '$ ';
   });
 
-  it('basic write', async () => {
-    shell.write('foo\nbar\n\rfoobar');
-    await assertBuffer('foo\n   bar\nfoobar');
+  it('basic line', async () => {
+    await shell.start();
+    shell.write('foo');
+    await assertBuffer('$ foo');
+    shell.write('\r');
+    await assertBuffer(
+      '$ foo',
+      'foo: command not found',
+      '$ '
+    );
+  });
+
+  describe('keybindings', () => {
+    beforeEach(async () => {
+      await shell.start();
+      shell.write(`foo bar baz`);
+      // Move cursor to a in "bar"
+      for (let i = 0; i < 6; i++) {
+        shell.write('\x02');
+      }
+      strictEqual(shell.promptInputCursorIndex, 5);
+      await lastWritePromise;
+      strictEqual(term.buffer.active.cursorX, 7); // '$ ' + prompt input
+    });
+    it('ctrl+f      - move one character forward', async () => {
+      shell.write('\u0006');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 6);
+      strictEqual(term.buffer.active.cursorX, 8);
+    });
+    it('right arrow - move one character forward', async () => {
+      shell.write('\u001b[C');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 6);
+      strictEqual(term.buffer.active.cursorX, 8);
+    });
+    it('ctrl+b      - move one character back', async () => {
+      shell.write('\u0002');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 4);
+      strictEqual(term.buffer.active.cursorX, 6);
+    });
+    it('left arrow  - move one character back', async () => {
+      shell.write('\u001b[D');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 4);
+      strictEqual(term.buffer.active.cursorX, 6);
+    });
+    it('ctrl+a      - move to the start of the command line', async () => {
+      shell.write('\u0001');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 0);
+      strictEqual(term.buffer.active.cursorX, 2);
+    });
+    it('home        - move to the start of the command line', async () => {
+      shell.write('\u001b[H');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 0);
+      strictEqual(term.buffer.active.cursorX, 2);
+    });
+    it('ctrl+e      - move to the end of the command line', async () => {
+      shell.write('\u0005');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 11);
+      strictEqual(term.buffer.active.cursorX, 13);
+    });
+    it('end         - move to the end of the command line', async () => {
+      shell.write('\u001b[F');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 11);
+      strictEqual(term.buffer.active.cursorX, 13);
+    });
+    it('alt+f       - move one character forward', async () => {
+      shell.write('\u001bf');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 6);
+      strictEqual(term.buffer.active.cursorX, 8);
+    });
+    it('ctrl+right  - move one character forward', async () => {
+      shell.write('\u001b[1;5C');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 6);
+      strictEqual(term.buffer.active.cursorX, 8);
+    });
+    it('alt+b       - move one character backward', async () => {
+      shell.write('\u001bb');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 4);
+      strictEqual(term.buffer.active.cursorX, 6);
+    });
+    it('ctrl+left   - move one character backward', async () => {
+      shell.write('\u001b[1;5D');
+      await assertBuffer('$ foo bar baz');
+      strictEqual(shell.promptInputCursorIndex, 4);
+      strictEqual(term.buffer.active.cursorX, 6);
+    });
   });
 });

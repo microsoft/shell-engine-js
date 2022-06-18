@@ -22,6 +22,7 @@ export class Shell extends Disposable implements ShellApi {
 
   private readonly _commandRegistry = new CommandRegistry();
   get commands() { return this._commandRegistry; }
+  get promptInputCursorIndex() { return this._cursor; }
 
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
@@ -40,14 +41,15 @@ export class Shell extends Disposable implements ShellApi {
     super();
   }
 
-  start() {
+  async start() {
     if (this.options?.welcomeMessage) {
       this._onDidWriteData.fire(this.options.welcomeMessage + '\n\r');
     }
-    this._resetPromptInput(true);
+    await this._resetPromptInput(true);
   }
 
   write(data: string) {
+    // TODO: This should read x characters from data, \u0002\u0002 for example doesn't get handled
     switch (data) {
       case '\u0003': // ctrl+C
         this._onDidWriteData.fire('\x1b[31m^C\x1b[0m');
@@ -134,7 +136,7 @@ export class Shell extends Disposable implements ShellApi {
         this._onDidWriteData.fire(`${name}: command not found`);
       }
     }
-    this._resetPromptInput();
+    await this._resetPromptInput();
   }
 
   private async _resetPromptInput(suppressNewLine: boolean = false) {
