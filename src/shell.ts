@@ -63,21 +63,27 @@ export class Shell extends Disposable implements ShellApi {
           this._setPromptInput(this.promptInput.substring(0, this._cursor) + this.promptInput.substring(this._cursor + 1));
         }
         break;
+      case '\u0006': // ctrl+f
       case '\u001b[C': // right
         this._setCursorPosition(this._cursor + 1);
         break;
+      case '\u001bf': // alt+f
       case '\u001b[1;5C': // ctrl+right
         this._moveCursorWordRight();
         break;
+      case '\u0002': // ctrl+b
       case '\u001b[D': // left
         this._setCursorPosition(this._cursor - 1);
         break;
+      case '\u001bb': // alt+b
       case '\u001b[1;5D': // ctrl+left
         this._moveCursorWordLeft();
         break;
+      case '\u0001': // ctrl+a
       case '\u001b[H': // home
         this._setCursorPosition(0);
         break;
+      case '\u0005': // ctrl+e
       case '\u001b[F': // end
         this._setCursorPosition(this.promptInput.length);
         break;
