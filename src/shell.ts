@@ -79,7 +79,7 @@ export class Shell extends Disposable implements ShellApi {
         this._setCursorPosition(0);
         break;
       case '\u001b[F': // end
-        this._setCursorPosition(this.promptInput.length - 1);
+        this._setCursorPosition(this.promptInput.length);
         break;
       case '\u0009': // tab
 
