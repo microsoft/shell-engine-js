@@ -57,17 +57,17 @@ export class Shell extends Disposable implements ShellApi {
         this._runCommand(this.promptInput);
         break;
       case '\u007F': // backspace (DEL)
-      if (this.promptInput.length > 0) {
-          this._onDidWriteData.fire('\b \b');
-          this._setPromptInput(this.promptInput.substring(0, this.promptInput.length - 1));
+      if (this.promptInput.length > 0 && this._cursor > 0) {
+          this._onDidWriteData.fire('\b\x1b[P'); //  \b
           this._cursor--;
+          this._setPromptInput(this.promptInput.substring(0, this._cursor) + this.promptInput.substring(this._cursor + 1));
         }
         break;
       case '\u001b[C': // right
         this._setCursorPosition(this._cursor + 1);
         break;
       case '\u001b[1;5C': // ctrl+right
-      this._moveCursorWordRight();
+        this._moveCursorWordRight();
         break;
       case '\u001b[D': // left
         this._setCursorPosition(this._cursor - 1);
@@ -90,9 +90,8 @@ export class Shell extends Disposable implements ShellApi {
         this._onDidPressTab.fire();
         break;
       default: // Print all other characters for demo
-
         if (this._cursor !== this.promptInput.length) {
-          throw new Error('NYI'); // TODO: Implement
+          this._onDidWriteData.fire('\x1b[@');
         }
 
         if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7B)) {
@@ -136,6 +135,15 @@ export class Shell extends Disposable implements ShellApi {
     this._setPromptInput('');
     this._cursor = 0;
     this._onDidWriteData.fire(`${suppressNewLine ? '' : '\r\n'}${await this._getNewPromptString()}`);
+  }
+
+  private _reprintPromptInput() {
+    const originalCursorPosition = this._cursor;
+    this._setCursorPosition(0);
+    this._onDidWriteData.fire('\x1b[K');
+    this._onDidWriteData.fire(this.promptInput);
+    this._cursor = this.promptInput.length;
+    this._setCursorPosition(originalCursorPosition);
   }
 
   private async _getNewPromptString(): Promise<string> {
@@ -235,7 +243,7 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   private _setCursorPosition(position: number) {
-    if (position < 0 || position >= this.promptInput.length) {
+    if (position < 0 || position > this.promptInput.length) {
       return;
     }
     if (this._cursor !== position) {
