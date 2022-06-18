@@ -54,7 +54,7 @@
           }
         ],
         "background": {
-          "beginsPattern": "assets by",
+          "beginsPattern": "asset demo.bundle.js",
           "endsPattern": "webpack \\d+\\.\\d+\\.\\d+ compiled successfully"
         }
       },
@@ -62,5 +62,15 @@
         "group": "build-group"
       }
     },
+    {
+      "type": "shell",
+      "label": "test",
+      "command": "yarn",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
   ]
 }

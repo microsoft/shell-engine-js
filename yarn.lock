@@ -1401,6 +1401,11 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
+xterm-headless@^4.18.0:
+  version "4.18.0"
+  resolved "https://registry.yarnpkg.com/xterm-headless/-/xterm-headless-4.18.0.tgz#b37566715ecee02dc397c72d644c4c493a25ca84"
+  integrity sha512-VwSPG2cyVOwesVVLBVrybYNY6cUMiVkD2fLnIXcBs/1iJ3M7bhD3lP9HdQOHGtOkbxV2Duf7MZNmEfngBXL/iQ==
+
 xterm@4.16:
   version "4.16.0"
   resolved "https://registry.yarnpkg.com/xterm/-/xterm-4.16.0.tgz#af25223c72917438842121e1bcd1b60ffd7e8476"

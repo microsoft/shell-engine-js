@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     "types": [
-      "../node_modules/@types/mocha",
-      "../node_modules/@types/node"
+      "../../node_modules/@types/mocha",
+      "../../node_modules/@types/node",
+      "../../node_modules/xterm-headless"
     ],
-    "target": "es6",
+    "target": "es5",
     "lib": [
       "es5",
       "ES2015",
@@ -12,9 +13,10 @@
     ],
     "rootDir": ".",
     "baseUrl": ".",
-    "outDir": "../out-test",
+    "outDir": "../../out/test",
 
     "composite": true,
+    "downlevelIteration": true,
     "declaration": true,
     "sourceMap": true,
     "removeComments": true,
@@ -27,6 +29,6 @@
     "./**/*"
   ],
   "references": [
-    { "path": "../src/tsconfig.json" }
+    { "path": "../tsconfig.json" }
   ]
 }

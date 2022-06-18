@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es5",
     "lib": [
       "es5",
       "ES2015",
@@ -11,6 +11,7 @@
     "outDir": "../out",
 
     "composite": true,
+    "downlevelIteration": true,
     "declaration": true,
     "sourceMap": true,
     "removeComments": true,
@@ -22,4 +23,7 @@
     "./**/*",
     "../typings/js-shell-engine.d.ts"
   ],
+  "exclude": [
+    "./test"
+  ]
 }
