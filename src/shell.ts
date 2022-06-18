@@ -58,7 +58,7 @@ export class Shell extends Disposable implements ShellApi {
         break;
       case '\u007F': // backspace (DEL)
       if (this.promptInput.length > 0 && this._cursor > 0) {
-          this._onDidWriteData.fire('\b\x1b[P'); //  \b
+          this._onDidWriteData.fire('\b\x1b[P');
           this._cursor--;
           this._setPromptInput(this.promptInput.substring(0, this._cursor) + this.promptInput.substring(this._cursor + 1));
         }
