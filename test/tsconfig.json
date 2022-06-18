@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
+    "types": [
+      "../node_modules/@types/mocha",
+      "../node_modules/@types/node"
+    ],
     "target": "es6",
     "lib": [
       "es5",
       "ES2015",
-      "ES2020"
+      "ES2017"
     ],
     "rootDir": ".",
     "baseUrl": ".",
-    "outDir": "../out",
+    "outDir": "../out-test",
 
     "composite": true,
     "declaration": true,
@@ -16,10 +20,13 @@
     "removeComments": true,
     "pretty": true,
     "incremental": true,
+    "noImplicitOverride": true,
     "strict": true
   },
   "include": [
-    "./**/*",
-    "../typings/js-shell-engine.d.ts"
+    "./**/*"
   ],
+  "references": [
+    { "path": "../src/tsconfig.json" }
+  ]
 }

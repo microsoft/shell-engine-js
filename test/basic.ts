@@ -1,4 +1,4 @@
-const Shell = require('../out/shell.js').Shell;
+import { Shell } from '../out/shell.js';
 
 const shell = new Shell();
 shell.onDidWriteData(e => console.log('onDidWriteData: ' + e));

@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "watch-tsc": "tsc -w -p src/tsconfig.json",
+    "watch-tsc": "tsc -w -p ./tsconfig.json",
     "watch-webpack": "webpack -c ./demo/webpack.config.js -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,7 +20,9 @@
   },
   "homepage": "https://github.com/Tyriar/web-shell-engine#readme",
   "devDependencies": {
+    "@types/mocha": "^9.1.1",
     "babel-loader": "^8.2.2",
+    "mocha": "^10.0.0",
     "source-map-loader": "^3.0.0",
     "ts-loader": "^9.2.5",
     "typescript": "^4.4.2",
