@@ -193,9 +193,9 @@ export class Shell extends Disposable implements ShellApi {
         } catch (e) {
           this._onDidWriteData.fire('\x1b[31m');
           if (e && e instanceof Error) {
-            this._onDidWriteData.fire(`failed: ${e.message}`);
+            this._onDidWriteData.fire(`${name}: ${e.message}`);
           } else {
-            this._onDidWriteData.fire('failed');
+            this._onDidWriteData.fire(`${name}: failed`);
           }
           this._onDidWriteData.fire('\x1b[0m');
           exitCode = -1;
@@ -408,6 +408,7 @@ export class Shell extends Disposable implements ShellApi {
     ]);
   }
 
+  // TODO: environment variable provider should make a copy of the environment variables
   registerEnvironmentVariableProvider(environmentVariableProvider: IEnvironmentVariableProvider): IDisposable {
     if (this.environmentVariableProvider) {
       throw new Error('Multiple environment variable providers not supported');
