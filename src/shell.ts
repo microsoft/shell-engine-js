@@ -3,6 +3,7 @@ import { ICommand, IDisposable, IShellOptions, Shell as ShellApi, IFileSystemPro
 import { EventEmitter } from "./events.js";
 import { Disposable } from "./lifecycle.js";
 import { isAbsolute, join, resolve } from "./path.js";
+import * as minimist from 'minimist';
 
 export interface IExecuteCommandEvent {
   command: IExecutedCommand;
@@ -394,13 +395,13 @@ export class Shell extends Disposable implements ShellApi {
         const dir = args[1];
         const target = resolve(isAbsolute(dir) ? dir : join(fileSystemProvider.cwd, dir))
         const result = await fileSystemProvider.stat(target);
-        if (result.type === FileType.Directory) {
-          fileSystemProvider.cwd = target;
-          return 0;
-        } else {
+        // TODO: Resolve symlinks
+        if (result.type !== FileType.Directory) {
           write('not a directory\n\r');
+          return 1;
         }
-        return 1;
+        fileSystemProvider.cwd = target;
+        return 0;
       },
     });
     this.registerCommand('ls', {
@@ -444,10 +445,37 @@ export class Shell extends Disposable implements ShellApi {
         return 0;
       }
     });
+    this.registerCommand('rm', {
+      async run(write, ...args) {
+        // TODO: Report usage for unknown args
+        const parsedArgs = minimist(args, {
+          boolean: ['r']
+        });
+        const options: Parameters<IFileSystemProvider['delete']>[1] = {
+          recursive: parsedArgs['r']
+        };
+        let file: string;
+        let deleteCount = 0;
+        for (let i = 1; i < parsedArgs._.length; i++) {
+          file = parsedArgs._[i];
+          if (file.length === 0) {
+            continue;
+          }
+          if (!isAbsolute(file)) {
+            file = join(fileSystemProvider.cwd, file);
+          }
+          await fileSystemProvider.delete(file, options);
+          deleteCount++;
+        }
+        if (deleteCount === 0) {
+          throw new Error('No files specified');
+        }
+        return 0;
+      }
+    });
     // TODO: Return disposable
     return null!;
   }
-
 }
 
 const enum FileType {

@@ -157,6 +157,7 @@ export interface IFileSystemProvider {
   stat(path: string): IFileStat | Promise<IFileStat>;
   readDirectory(path: string): [string, FileType][] | Promise<[string, FileType][]>;
   createDirectory(path: string): void | Promise<void>;
+  delete(path: string, options?: { recursive?: boolean; useTrash?: boolean }): Promise<void>;
 }
 
 export interface IFileStat {

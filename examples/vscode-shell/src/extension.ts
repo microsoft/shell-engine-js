@@ -28,6 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
     },
     async stat(path: string) {
       return vscode.workspace.fs.stat(vscode.Uri.file(path));
+    },
+    async delete(path: string, options?: { recursive?: boolean; useTrash?: boolean }) {
+      return vscode.workspace.fs.delete(vscode.Uri.file(path), options);
     }
   } as any;
   shell.registerFileSystemProvider(fileSystemProvider);
