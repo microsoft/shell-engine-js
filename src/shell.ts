@@ -159,8 +159,12 @@ export class Shell extends Disposable implements ShellApi {
     return this._commandRegistry.registerCommand(name, command);
   }
 
-  setPromptVariable(variable: string, value: string | (() => string | Promise<string>)) {
-    this._promptVariables.set(variable, value);
+  setPromptVariable(variable: string, value: string | (() => string | Promise<string>) | undefined) {
+    if (value === undefined) {
+      this._promptVariables.delete(variable);
+    } else {
+      this._promptVariables.set(variable, value);
+    }
   }
 
   private async _runCommand(input: string) {

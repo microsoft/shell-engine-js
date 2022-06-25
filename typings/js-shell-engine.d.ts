@@ -103,7 +103,7 @@ export class Shell implements IDisposable {
   /**
    * Sets a variable's value to be used by the prompt.
    */
-  setPromptVariable(variable: string, value: string | (() => string)): void;
+  setPromptVariable(variable: string, value: string | (() => string) | undefined): void;
 
   // TODO: Support plugin file systems
   registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable;
