@@ -180,6 +180,7 @@ export class Shell extends Disposable implements ShellApi {
         exitCode = await command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
       } else {
         this._onDidWriteData.fire(`${name}: command not found`);
+        exitCode = 1;
       }
     } else {
       eventCommand = { name: '', argv: [''], commandLine: input };
