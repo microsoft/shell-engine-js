@@ -3,6 +3,8 @@ export {
   IDisposable,
   IEvent,
   IExecutedCommand,
+  IFileStat,
+  IFileSystemProvider,
   IShellOptions,
-  Shell
+  Shell,
 } from '../typings/js-shell-engine';

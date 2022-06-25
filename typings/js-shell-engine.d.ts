@@ -6,6 +6,7 @@ export interface IEvent<T> {
   (listener: (arg: T) => any): IDisposable;
 }
 
+// TODO: Should a command contribute tab completion?
 export interface ICommand {
   run(write: (data: string) => void, ...args: string[]): Promise<number>;
 }
@@ -105,7 +106,7 @@ export class Shell implements IDisposable {
   setPromptVariable(variable: string, value: string): void;
 
   // TODO: Support plugin file systems
-  // registerFileSystemProvider(fsProvider: any, cwd: string): IDisposable;
+  registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable;
 
   // TODO: Support plugin environment provider (eg. `echo $ENV_VAR` support)
   // registerEnvironmentProvider(environmentProvider: any): IDisposable
@@ -149,4 +150,31 @@ export interface IExecutedCommand {
    * The raw command line that was executed.
    */
   commandLine: string;
+}
+
+export interface IFileSystemProvider {
+  cwd: string;
+  stat(path: string): IFileStat | Promise<IFileStat>;
+  readDirectory(path: string): [string, FileType][] | Promise<[string, FileType][]>;
+  createDirectory(path: string): void | Promise<void>;
+}
+
+export interface IFileStat {
+  type: FileType;
+  ctime: number;
+  mtime: number;
+  size: number;
+  permissions?: FilePermission;
+}
+
+/**
+ * Unknown = 0,
+ * File = 1,
+ * Directory = 2,
+ * SymbolicLink = 64
+ */
+export type FileType = 0 | 1 | 2 | 64;
+
+export enum FilePermission {
+  Readonly = 1
 }

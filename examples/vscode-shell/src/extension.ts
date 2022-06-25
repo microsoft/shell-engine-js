@@ -5,6 +5,7 @@ import { initTabCompletion } from '../../../out/modules/tabCompletion.js';
 import { initHelp } from '../../../out/modules/help.js';
 import { initVscodeShellIntegration } from '../../../out/modules/vscodeShellIntegration.js';
 import { hostname } from 'os';
+import { IFileSystemProvider } from '../../../typings/js-shell-engine.js';
 
 export function activate(context: vscode.ExtensionContext) {
   const shell = new Shell();
@@ -16,6 +17,20 @@ export function activate(context: vscode.ExtensionContext) {
   initVscodeShellIntegration(shell);
 
   // Initialize shell-specific functionality
+  // TODO: Fix type errors
+  const fileSystemProvider: IFileSystemProvider = {
+    cwd: vscode.workspace.workspaceFolders![0].uri.path,
+    async createDirectory(path: string) {
+      return vscode.workspace.fs.createDirectory(vscode.Uri.file(path));
+    },
+    async readDirectory(path: string) {
+      return vscode.workspace.fs.readDirectory(vscode.Uri.file(path));
+    },
+    async stat(path: string) {
+      return vscode.workspace.fs.stat(vscode.Uri.file(path));
+    }
+  } as any;
+  shell.registerFileSystemProvider(fileSystemProvider);
   shell.registerCommand('command', {
     async run(write, ...args) {
       if (args[1] === undefined) {
@@ -40,7 +55,9 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // Set prompt and register some prompt variables
-  shell.prompt = '\x1b[42m vscode \x1b[0;32;46m\ue0b0\x1b[0;46m ${hostname} \x1b[0;36;45m\ue0b0\x1b[0;45m ${time} \x1b[0;35m\ue0b0\x1b[0m ';
+  shell.prompt = '\x1b[42m ${hostname} \x1b[0;32;46m\ue0b0\x1b[0;46m ${time} \x1b[0;36;45m\ue0b0\x1b[0;45m ${cwd} \x1b[0;35m\ue0b0\x1b[0m';
+  // TODO: This should happen automatically by registering the file system provider
+  shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
   shell.setPromptVariable('hostname', hostname());
   shell.setPromptVariable('time', () => {
     const now = new Date();

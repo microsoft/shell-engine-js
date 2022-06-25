@@ -1,7 +1,8 @@
 import { CommandRegistry } from "./commandRegistry.js";
-import { ICommand, IDisposable, IShellOptions, Shell as ShellApi } from "./types.js";
+import { ICommand, IDisposable, IShellOptions, Shell as ShellApi, IFileSystemProvider, IFileStat } from "./types.js";
 import { EventEmitter } from "./events.js";
 import { Disposable } from "./lifecycle.js";
+import { isAbsolute, join, resolve } from "./path.js";
 
 export interface IExecuteCommandEvent {
   command: IExecutedCommand;
@@ -25,6 +26,7 @@ export class Shell extends Disposable implements ShellApi {
 
   private _cursor: number = 0;
   private readonly _promptVariables: Map<string, string | (() => string | Promise<string>)> = new Map();
+  private _fileSystemProvider?: IFileSystemProvider;
 
   private readonly _commandRegistry = new CommandRegistry();
   get commands() { return this._commandRegistry; }
@@ -373,4 +375,44 @@ export class Shell extends Disposable implements ShellApi {
   private _bell() {
     this._onDidWriteData.fire('\x07');
   }
+
+  registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable {
+    this._fileSystemProvider = fileSystemProvider;
+    this.registerCommand('cd', {
+      async run(write, ...args) {
+        const dir = args[1];
+        const target = resolve(isAbsolute(dir) ? dir : join(fileSystemProvider.cwd, dir))
+        let result: IFileStat;
+        try {
+          result = await fileSystemProvider.stat(target);
+        } catch (e) {
+          write('\x1b[31m');
+          if (e && e instanceof Error) {
+            write(`failed: ${e.message}`);
+          } else {
+            write('failed');
+          }
+          write('\x1b[0m');
+          return 1;
+        }
+        if (result.type === FileType.Directory) {
+          fileSystemProvider.cwd = target;
+          return 0;
+        } else {
+          write('not a directory\n\r');
+        }
+        return 1;
+      },
+    });
+    // TODO: Return disposable
+    return null!;
+  }
+}
+
+
+const enum FileType {
+  Unknown = 0,
+  File = 1,
+  Directory = 2,
+  SymbolicLink = 64
 }
