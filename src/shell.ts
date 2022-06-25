@@ -1,8 +1,8 @@
 import { CommandRegistry } from "./commandRegistry.js";
 import { EventEmitter } from "./events.js";
-import { registerFileSystemProvider } from "./fileSystem.js";
-import { Disposable } from "./lifecycle.js";
-import { ICommand, IDisposable, IFileSystemProvider, IShellOptions, Shell as ShellApi } from "./types.js";
+import { attachFileSystemProvider } from "./fileSystem.js";
+import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from "./lifecycle.js";
+import { ICommand, IDisposable, IEnvironmentVariableProvider, IFileSystemProvider, IShellOptions, Shell as ShellApi } from "./types.js";
 
 export interface IExecuteCommandEvent {
   command: IExecutedCommand;
@@ -30,6 +30,9 @@ export class Shell extends Disposable implements ShellApi {
   private readonly _commandRegistry = new CommandRegistry();
   get commands() { return this._commandRegistry; }
   get promptInputCursorIndex() { return this._cursor; }
+
+  private _fileSystemProvider?: IFileSystemProvider;
+  private _environmentVariableProvider?: IEnvironmentVariableProvider;
 
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
@@ -391,6 +394,24 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable {
-    return registerFileSystemProvider(this, fileSystemProvider);
+    if (this._fileSystemProvider) {
+      throw new Error('Multiple file system providers not supported');
+    }
+    this._fileSystemProvider = fileSystemProvider;
+    const attached = attachFileSystemProvider(this, fileSystemProvider);;
+    return getDisposeArrayDisposable([
+      attached,
+      toDisposable(() => this._fileSystemProvider = undefined)
+    ]);
+  }
+
+  registerEnvironmentVariableProvider(environmentVariableProvider: IEnvironmentVariableProvider): IDisposable {
+    if (this._environmentVariableProvider) {
+      throw new Error('Multiple environment variable providers not supported');
+    }
+    this._environmentVariableProvider = environmentVariableProvider;
+    return getDisposeArrayDisposable([
+      toDisposable(() => this._environmentVariableProvider = undefined)
+    ]);
   }
 }

@@ -1,6 +1,7 @@
 export {
   ICommand,
   IDisposable,
+  IEnvironmentVariableProvider,
   IEvent,
   IExecutedCommand,
   IFileStat,

@@ -2,7 +2,7 @@ import { isAbsolute, join, resolve } from "./path.js";
 import { IDisposable, IFileSystemProvider, Shell as ShellApi } from "./types.js";
 import * as minimist from 'minimist';
 
-export function registerFileSystemProvider(shell: ShellApi, fileSystemProvider: IFileSystemProvider): IDisposable {
+export function attachFileSystemProvider(shell: ShellApi, fileSystemProvider: IFileSystemProvider): IDisposable {
   shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
   shell.commands.registerCommand('cd', {
     async run(write, ...args) {

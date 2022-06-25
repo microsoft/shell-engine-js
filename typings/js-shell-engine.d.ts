@@ -105,11 +105,13 @@ export class Shell implements IDisposable {
    */
   setPromptVariable(variable: string, value: string | (() => string) | undefined): void;
 
-  // TODO: Support plugin file systems
+  /**
+   * Register a file system to use with the shell.
+   */
   registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable;
 
   // TODO: Support plugin environment provider (eg. `echo $ENV_VAR` support)
-  // registerEnvironmentProvider(environmentProvider: any): IDisposable
+  registerEnvironmentVariableProvider(environmentVariableProvider: IEnvironmentVariableProvider): IDisposable;
 }
 
 export interface IShellOptions {
@@ -178,4 +180,9 @@ export type FileType = 0 | 1 | 2 | 64;
 
 export enum FilePermission {
   Readonly = 1
+}
+
+export interface IEnvironmentVariableProvider {
+  getAll(): { [key: string]: string | undefined };
+  get(key: string): string | undefined;
 }

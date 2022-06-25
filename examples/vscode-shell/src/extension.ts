@@ -56,6 +56,14 @@ export function activate(context: vscode.ExtensionContext) {
       return 0;
     },
   });
+  shell.registerEnvironmentVariableProvider({
+    getAll() {
+      return process.env
+    },
+    get(key: string): string | undefined {
+      return process.env[key];
+    },
+  });
 
   // Set prompt and register some prompt variables
   shell.prompt = '\x1b[42m ${hostname} \x1b[0;32;46m\ue0b0\x1b[0;46m ${time} \x1b[0;36;45m\ue0b0\x1b[0;45m ${cwd} \x1b[0;35m\ue0b0\x1b[0m ';
