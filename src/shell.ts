@@ -64,14 +64,18 @@ export class Shell extends Disposable implements ShellApi {
           this._onDidWriteData.fire('\b\x1b[P');
           this._cursor--;
           this._setPromptInput(this.promptInput.substring(0, this._cursor) + this.promptInput.substring(this._cursor + 1));
+        } else {
+          this._bell();
         }
         break;
       case '\u001b\u007f': // ctrl+backspace
         this._deleteCursorWordLeft();
         break;
       case '\u001b[A': // up
+        this._bell();
         break;
       case '\u001b[B': // down
+        this._bell();
         break;
       case '\u0006': // ctrl+f
       case '\u001b[C': // right
@@ -273,7 +277,7 @@ export class Shell extends Disposable implements ShellApi {
 
   private _moveCursorWordLeft() {
     if (this._cursor === 0) {
-      // TODO: Bell?
+      this._bell();
       return;
     }
     let position = this._cursor;
@@ -289,7 +293,7 @@ export class Shell extends Disposable implements ShellApi {
 
   private _moveCursorWordRight() {
     if (this._cursor === this.promptInput.length - 1) {
-      // TODO: Bell?
+      this._bell();
       return;
     }
     let position = this._cursor;
@@ -305,7 +309,7 @@ export class Shell extends Disposable implements ShellApi {
 
   private _deleteCursorWordLeft() {
     if (this._cursor === this.promptInput.length - 1) {
-      // TODO: Bell?
+      this._bell();
       return;
     }
 
@@ -320,5 +324,9 @@ export class Shell extends Disposable implements ShellApi {
     this._onDidWriteData.fire('\b\x1b[P'.repeat(charCount));
     this._setPromptInput(this.promptInput.substring(0, position) + this.promptInput.substring(this._cursor));
     this._cursor -= charCount;
+  }
+
+  private _bell() {
+    this._onDidWriteData.fire('\x07');
   }
 }
