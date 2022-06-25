@@ -405,17 +405,31 @@ export class Shell extends Disposable implements ShellApi {
     });
     this.registerCommand('ls', {
       async run(write, ...args) {
+        function formatFile(file: [string, FileType]): string {
+          const color = fileTypeSgr(file[1]);
+          if (color) {
+            return `\x1b[${color}m${file[0]}\x1b[0m`;
+          }
+          return file[0];
+        }
+        function fileTypeSgr(fileType: FileType): string | undefined {
+          switch (fileType) {
+            case FileType.Directory: return '1;34';
+            case FileType.SymbolicLink: return '32';
+          }
+          return undefined;
+        }
+
         const result = await fileSystemProvider.readDirectory(fileSystemProvider.cwd);
-        for (const f of result) {
-          // TODO: Other file type colors
-          if (f[1] === FileType.Directory) {
-            write('\x1b[34m');
+        const sortedResult = result.sort((a, b) => {
+          if (a[1] !== b[1]) {
+            // This puts symlinks at the top which is a bit weird
+            return b[1] - a[1];
           }
-          write(f[0]);
-          if (f[1] === FileType.Directory) {
-            write('\x1b[0m');
-          }
-          write('\n\r');
+          return a[0].localeCompare(b[0]);
+        });
+        for (const file of result) {
+          write(`${formatFile(file)}\n\r`);
         }
         return 0;
       }
@@ -425,7 +439,6 @@ export class Shell extends Disposable implements ShellApi {
   }
 
 }
-
 
 const enum FileType {
   Unknown = 0,
