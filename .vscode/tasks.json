@@ -71,6 +71,20 @@
         "kind": "test",
         "isDefault": true
       }
-    }
+    },
+		{
+			"type": "npm",
+			"script": "watch",
+      "label": "watch-vscode-shell",
+      "options": {
+        "cwd": "examples/vscode-shell"
+      },
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": "build"
+		}
   ]
 }
