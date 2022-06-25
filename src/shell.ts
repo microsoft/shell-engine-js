@@ -58,12 +58,16 @@ export class Shell extends Disposable implements ShellApi {
       case '\r': // enter
         this._runCommand(this.promptInput);
         break;
+      case '\u0008': // shift+backspace
       case '\u007F': // backspace (DEL)
-      if (this.promptInput.length > 0 && this._cursor > 0) {
+        if (this.promptInput.length > 0 && this._cursor > 0) {
           this._onDidWriteData.fire('\b\x1b[P');
           this._cursor--;
           this._setPromptInput(this.promptInput.substring(0, this._cursor) + this.promptInput.substring(this._cursor + 1));
         }
+        break;
+      case '\u001b\u007f': // ctrl+backspace
+        this._deleteCursorWordLeft();
         break;
       case '\u001b[A': // up
         break;
@@ -297,5 +301,24 @@ export class Shell extends Disposable implements ShellApi {
       position++;
     }
     this._setCursorPosition(position);
+  }
+
+  private _deleteCursorWordLeft() {
+    if (this._cursor === this.promptInput.length - 1) {
+      // TODO: Bell?
+      return;
+    }
+
+    let position = this._cursor;
+    while (position > 0 && this.promptInput[position - 1] === ' ') {
+      position--;
+    }
+    while (position > 0 && this.promptInput[position - 1] !== ' ') {
+      position--;
+    }
+    const charCount = this._cursor - position
+    this._onDidWriteData.fire('\b\x1b[P'.repeat(charCount));
+    this._setPromptInput(this.promptInput.substring(0, position) + this.promptInput.substring(this._cursor));
+    this._cursor -= charCount;
   }
 }
