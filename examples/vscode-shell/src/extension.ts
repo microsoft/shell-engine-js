@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // Set prompt and register some prompt variables
-  shell.prompt = '\x1b[42m ${hostname} \x1b[0;32;46m\ue0b0\x1b[0;46m ${time} \x1b[0;36;45m\ue0b0\x1b[0;45m ${cwd} \x1b[0;35m\ue0b0\x1b[0m';
+  shell.prompt = '\x1b[42m ${hostname} \x1b[0;32;46m\ue0b0\x1b[0;46m ${time} \x1b[0;36;45m\ue0b0\x1b[0;45m ${cwd} \x1b[0;35m\ue0b0\x1b[0m ';
   // TODO: This should happen automatically by registering the file system provider
   shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
   shell.setPromptVariable('hostname', hostname());

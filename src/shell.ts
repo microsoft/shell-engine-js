@@ -179,7 +179,18 @@ export class Shell extends Disposable implements ShellApi {
       };
       this._onBeforeExecuteCommand.fire(eventCommand);
       if (command) {
-        exitCode = await command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
+        try {
+          exitCode = await command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
+        } catch (e) {
+          this._onDidWriteData.fire('\x1b[31m');
+          if (e && e instanceof Error) {
+            this._onDidWriteData.fire(`failed: ${e.message}`);
+          } else {
+            this._onDidWriteData.fire('failed');
+          }
+          this._onDidWriteData.fire('\x1b[0m');
+          exitCode = -1;
+        }
       } else {
         this._onDidWriteData.fire(`${name}: command not found`);
         exitCode = 1;
@@ -382,19 +393,7 @@ export class Shell extends Disposable implements ShellApi {
       async run(write, ...args) {
         const dir = args[1];
         const target = resolve(isAbsolute(dir) ? dir : join(fileSystemProvider.cwd, dir))
-        let result: IFileStat;
-        try {
-          result = await fileSystemProvider.stat(target);
-        } catch (e) {
-          write('\x1b[31m');
-          if (e && e instanceof Error) {
-            write(`failed: ${e.message}`);
-          } else {
-            write('failed');
-          }
-          write('\x1b[0m');
-          return 1;
-        }
+        const result = await fileSystemProvider.stat(target);
         if (result.type === FileType.Directory) {
           fileSystemProvider.cwd = target;
           return 0;
@@ -404,9 +403,27 @@ export class Shell extends Disposable implements ShellApi {
         return 1;
       },
     });
+    this.registerCommand('ls', {
+      async run(write, ...args) {
+        const result = await fileSystemProvider.readDirectory(fileSystemProvider.cwd);
+        for (const f of result) {
+          // TODO: Other file type colors
+          if (f[1] === FileType.Directory) {
+            write('\x1b[34m');
+          }
+          write(f[0]);
+          if (f[1] === FileType.Directory) {
+            write('\x1b[0m');
+          }
+          write('\n\r');
+        }
+        return 0;
+      }
+    });
     // TODO: Return disposable
     return null!;
   }
+
 }
 
 
