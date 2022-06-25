@@ -435,6 +435,15 @@ export class Shell extends Disposable implements ShellApi {
         return 0;
       }
     });
+    this.registerCommand('mkdir', {
+      async run(write, ...args) {
+        if (args.length < 2) {
+          throw new Error('Must specify directory to create');
+        }
+        await fileSystemProvider.createDirectory(join(fileSystemProvider.cwd, args[1]));
+        return 0;
+      }
+    });
     // TODO: Return disposable
     return null!;
   }
