@@ -3,17 +3,28 @@ import { IDisposable, IFileSystemProvider, Shell } from "./types.js";
 import * as minimist from 'minimist';
 
 export function attachFileSystemProvider(shell: Shell, fileSystemProvider: IFileSystemProvider): IDisposable {
+  let previousCwd: string | undefined;
   shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
   shell.commands.registerCommand('cd', {
     async run(write, ...args) {
       const dir = args[1];
-      const target = resolve(isAbsolute(dir) ? dir : join(fileSystemProvider.cwd, dir))
+      let target: string;
+      if (dir === '-') {
+        if (!previousCwd) {
+          throw new Error('Previous director not set');
+          return 1;
+        }
+        target = previousCwd;
+      } else {
+        target = resolve(isAbsolute(dir) ? dir : join(fileSystemProvider.cwd, dir))
+      }
       const result = await fileSystemProvider.stat(target);
       // TODO: Resolve symlinks
       if (result.type !== FileType.Directory) {
         write('not a directory\n\r');
         return 1;
       }
+      previousCwd = fileSystemProvider.cwd;
       fileSystemProvider.cwd = target;
       return 0;
     },
