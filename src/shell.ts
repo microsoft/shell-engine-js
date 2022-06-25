@@ -409,7 +409,7 @@ export class Shell extends Disposable implements ShellApi {
           const color = fileTypeSgr(file[1]);
           const isDir = file[1] === FileType.Directory
           if (color) {
-            return `\x1b[${color}${isDir ? ';1' : ''}m${file[0]}${isDir ? '/' : ''}\x1b[0m`;
+            return `\x1b[${color}m${file[0]}${isDir ? '/' : ''}\x1b[0m`;
           }
           return file[0];
         }
