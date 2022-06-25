@@ -36,7 +36,7 @@ export function initHistory(shell: Shell) {
   const disposables: IDisposable[] = [];
   const registry = new HistoryRegistry();
   disposables.push(registry);
-  disposables.push(shell.onDidExecuteCommand(e => registry.addEntry(e)));
+  disposables.push(shell.onBeforeExecuteCommand(e => registry.addEntry(e)));
   disposables.push(shell.commands.registerCommand('history', new HistoryCommand(registry)));
   return toDisposable(() => disposeArray(disposables));
 }

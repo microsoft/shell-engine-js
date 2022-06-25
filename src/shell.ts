@@ -3,9 +3,15 @@ import { ICommand, IDisposable, IShellOptions, Shell as ShellApi } from "./types
 import { EventEmitter } from "./events.js";
 import { Disposable } from "./lifecycle.js";
 
+export interface IExecuteCommandEvent {
+  command: IExecutedCommand;
+  exitCode: number | undefined;
+}
+
 export interface IExecutedCommand {
   name: string;
   argv: string[];
+  commandLine: string;
 }
 
 export class Shell extends Disposable implements ShellApi {
@@ -28,7 +34,13 @@ export class Shell extends Disposable implements ShellApi {
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
   private _onDidChangePromptInput = new EventEmitter<string>();
   readonly onDidChangePromptInput = this._onDidChangePromptInput.event;
-  private _onDidExecuteCommand = new EventEmitter<IExecutedCommand>();
+  private _onBeforeWritePrompt = new EventEmitter<void>();
+  readonly onBeforeWritePrompt = this._onBeforeWritePrompt.event;
+  private _onDidWritePrompt = new EventEmitter<void>();
+  readonly onDidWritePrompt = this._onDidWritePrompt.event;
+  private _onBeforeExecuteCommand = new EventEmitter<IExecutedCommand>();
+  readonly onBeforeExecuteCommand = this._onBeforeExecuteCommand.event;
+  private _onDidExecuteCommand = new EventEmitter<IExecuteCommandEvent>();
   readonly onDidExecuteCommand = this._onDidExecuteCommand.event;
   private _onDidPressTab = new EventEmitter<void>();
   readonly onDidPressTab = this._onDidPressTab.event;
@@ -52,7 +64,18 @@ export class Shell extends Disposable implements ShellApi {
     // TODO: This should read x characters from data, \u0002\u0002 for example doesn't get handled
     switch (data) {
       case '\u0003': // ctrl+C
+        // ^C is treated like a command
+        const eventCommand = {
+          name: '',
+          argv: [''],
+          commandLine: this.promptInput
+        };
+        this._onBeforeExecuteCommand.fire(eventCommand);
         this._onDidWriteData.fire('\x1b[31m^C\x1b[0m');
+        this._onDidExecuteCommand.fire({
+          command: eventCommand,
+          exitCode: undefined
+        });
         this._resetPromptInput();
         break;
       case '\r': // enter
@@ -122,7 +145,11 @@ export class Shell extends Disposable implements ShellApi {
     }
   }
 
-  resize(columns: number, rows: number): void {
+  writeOsc(ident: number, data: string) {
+    this._onDidWriteData.fire(`\x1b]${ident};${data}\x07`);
+  }
+
+  resize(columns: number, rows: number) {
     this.dimensions.columns = columns;
     this.dimensions.rows = rows;
   }
@@ -131,30 +158,46 @@ export class Shell extends Disposable implements ShellApi {
     return this._commandRegistry.registerCommand(name, command);
   }
 
-  setPromptVariable(variable: string, value: string | (() => string | Promise<string>)): void {
+  setPromptVariable(variable: string, value: string | (() => string | Promise<string>)) {
     this._promptVariables.set(variable, value);
   }
 
   private async _runCommand(input: string) {
     const argv = input.trim().split(' ');
     const name = argv[0];
+    let exitCode: number | undefined;
+    let eventCommand: IExecutedCommand;
     if (name.length > 0) {
       this._onDidWriteData.fire('\n\r');
       const command = this._commandRegistry.commands.get(name);
-      this._onDidExecuteCommand.fire({ name, argv });
+      eventCommand = {
+        name,
+        argv,
+        commandLine: input
+      };
+      this._onBeforeExecuteCommand.fire(eventCommand);
       if (command) {
-        command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
+        exitCode = await command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
       } else {
         this._onDidWriteData.fire(`${name}: command not found`);
       }
+    } else {
+      eventCommand = { name: '', argv: [''], commandLine: input };
     }
+    this._onDidExecuteCommand.fire({
+      command: eventCommand,
+      exitCode
+    });
     await this._resetPromptInput();
   }
 
   private async _resetPromptInput(suppressNewLine: boolean = false) {
     this._setPromptInput('');
     this._cursor = 0;
-    this._onDidWriteData.fire(`${suppressNewLine ? '' : '\r\n'}${await this._getNewPromptString()}`);
+    this._onDidWriteData.fire(suppressNewLine ? '' : '\r\n');
+    this._onBeforeWritePrompt.fire();
+    this._onDidWriteData.fire(await this._getNewPromptString());
+    this._onDidWritePrompt.fire();
   }
 
   private _reprintPromptInput() {

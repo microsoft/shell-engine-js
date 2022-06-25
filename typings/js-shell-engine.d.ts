@@ -51,8 +51,14 @@ export class Shell implements IDisposable {
   readonly onDidChangeCwd: IEvent<string>;
   /** An event that's fired when the shell's prompt input changes. */
   readonly onDidChangePromptInput: IEvent<string>;
-  /** An event that's fired when a command is executed. */
-  readonly onDidExecuteCommand: IEvent<IExecutedCommand>;
+  /** An event that's fired _before_ the shell's prompt is written. */
+  readonly onBeforeWritePrompt: IEvent<void>;
+  /** An event that's fired _after_ the shell's prompt is written. */
+  readonly onDidWritePrompt: IEvent<void>;
+  /** An event that's fired _before_ a command is executed. */
+  readonly onBeforeExecuteCommand: IEvent<IExecutedCommand>;
+  /** An event that's fired _after_ a command is executed. */
+  readonly onDidExecuteCommand: IEvent<IExecuteCommandEvent>;
   /** An event that's fired when tab is pressed. */
   readonly onDidPressTab: IEvent<void>;
   /** An event that's fired when the shell writes to the terminal. */
@@ -84,6 +90,11 @@ export class Shell implements IDisposable {
   write(data: string): void;
 
   /**
+   * Write an OSC sequence to the shell.
+   */
+  writeOsc(ident: number, data: string): void;
+
+  /**
    * Resizes the shell.
    */
   resize(cols: number, rows: number): void;
@@ -113,7 +124,29 @@ export interface ICommandsNamespace {
   registerCommand(name: string, command: ICommand): IDisposable;
 }
 
+export interface IExecuteCommandEvent {
+  /**
+   * The command that was executed.
+   */
+  command: IExecutedCommand;
+  /**
+   * The exit code of the command. This is undefined when no command was executed (eg. enter on
+   * empty prompt or ^C).
+   */
+  exitCode: number | undefined;
+}
+
 export interface IExecutedCommand {
+  /**
+   * The name of the command (ie. argv[0]).
+   */
   name: string;
+  /**
+   * An array containing the command followed by each argument.
+   */
   argv: string[];
+  /**
+   * The raw command line that was executed.
+   */
+  commandLine: string;
 }
