@@ -56,12 +56,20 @@ export function activate(context: vscode.ExtensionContext) {
       return 0;
     },
   });
+  const shellEnv = { ...process.env };
   shell.registerEnvironmentVariableProvider({
     getAll() {
-      return process.env
+      return shellEnv
     },
     get(key: string): string | undefined {
-      return process.env[key];
+      return shellEnv[key];
+    },
+    set(key, value) {
+      if (value === undefined) {
+        delete shellEnv[key];
+      } else {
+        shellEnv[key] = value;
+      }
     },
   });
 

@@ -2,30 +2,68 @@ import { isAbsolute, join, resolve } from "./path.js";
 import { IDisposable, IFileSystemProvider, Shell } from "./types.js";
 import * as minimist from 'minimist';
 
+// Implemented using this standard:
+// https://pubs.opengroup.org/onlinepubs/9699919799/utilities/cd.html
 export function attachFileSystemProvider(shell: Shell, fileSystemProvider: IFileSystemProvider): IDisposable {
-  let previousCwd: string | undefined;
+  // TODO: Move to using $PWD for cwd
   shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
   shell.commands.registerCommand('cd', {
     async run(write, ...args) {
-      const dir = args[1];
-      let target: string;
-      if (dir === '-') {
-        if (!previousCwd) {
-          throw new Error('Previous director not set');
-          return 1;
-        }
-        target = previousCwd;
-      } else {
-        target = resolve(isAbsolute(dir) ? dir : join(fileSystemProvider.cwd, dir))
+      // Usage:
+      //   cd [-L|-P] [directory]
+      //   cd -
+      const parsedArgs = minimist(args, {
+        boolean: [
+          'L',
+          'P'
+        ]
+      });
+
+      // TODO: Support resolving symlinks
+      // let resolveSymlinks = false;
+      // if (parsedArgs.L) {
+      //   resolveSymlinks = false;
+      // } else if (parsedArgs.P) {
+      //   resolveSymlinks = true;
+      // }
+
+      if (parsedArgs._.length > 2) {
+        throw new Error('too many arguments');
       }
-      const result = await fileSystemProvider.stat(target);
+
+      let curpath: string;
+      if (parsedArgs._.length === 1) {
+        const home = shell.environmentVariableProvider?.get('HOME');
+        if (!home) {
+          throw new Error('HOME not set');
+        }
+        curpath = home;
+      } else {
+        const rawTarget = parsedArgs._[1];
+        if (rawTarget === '-') {
+          const oldpwd = shell.environmentVariableProvider?.get('OLDPWD');
+          if (!oldpwd) {
+            throw new Error('OLDPWD not set');
+          }
+          curpath = oldpwd;
+        } else {
+          // TODO: Support CDPATH
+          if (rawTarget.startsWith('/')) {
+            curpath = rawTarget;
+          } else {
+            curpath = join(fileSystemProvider.cwd, rawTarget);
+          }
+        }
+      }
+      const result = await fileSystemProvider.stat(curpath);
       // TODO: Resolve symlinks
       if (result.type !== FileType.Directory) {
         write('not a directory\n\r');
         return 1;
       }
-      previousCwd = fileSystemProvider.cwd;
-      fileSystemProvider.cwd = target;
+      shell.environmentVariableProvider?.set('OLDPWD', fileSystemProvider.cwd);
+      // TODO: Move to $PWD
+      fileSystemProvider.cwd = curpath;
       return 0;
     },
   });

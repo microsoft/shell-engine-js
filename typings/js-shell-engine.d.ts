@@ -113,6 +113,7 @@ export class Shell implements IDisposable {
    */
   registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable;
 
+  // Use a fake environment until a real one is set
   // TODO: Support plugin environment provider (eg. `echo $ENV_VAR` support)
   registerEnvironmentVariableProvider(environmentVariableProvider: IEnvironmentVariableProvider): IDisposable;
 }
@@ -188,4 +189,5 @@ export enum FilePermission {
 export interface IEnvironmentVariableProvider {
   getAll(): { [key: string]: string | undefined };
   get(key: string): string | undefined;
+  set(key: string, value: string | undefined): void;
 }
