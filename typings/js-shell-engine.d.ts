@@ -48,6 +48,9 @@ export class Shell implements IDisposable {
    */
   prompt: (() => Promise<string> | string) | string;
 
+  readonly fileSystemProvider?: IFileSystemProvider;
+  readonly environmentVariableProvider?: IEnvironmentVariableProvider;
+
   /** An event that's fired when the shell's current working directory changes. */
   readonly onDidChangeCwd: IEvent<string>;
   /** An event that's fired when the shell's prompt input changes. */

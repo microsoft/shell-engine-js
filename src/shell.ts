@@ -1,4 +1,5 @@
 import { CommandRegistry } from "./commandRegistry.js";
+import { registerEchoCommand } from "./commands/echo.js";
 import { EventEmitter } from "./events.js";
 import { attachFileSystemProvider } from "./fileSystem.js";
 import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from "./lifecycle.js";
@@ -31,8 +32,8 @@ export class Shell extends Disposable implements ShellApi {
   get commands() { return this._commandRegistry; }
   get promptInputCursorIndex() { return this._cursor; }
 
-  private _fileSystemProvider?: IFileSystemProvider;
-  private _environmentVariableProvider?: IEnvironmentVariableProvider;
+  public fileSystemProvider?: IFileSystemProvider;
+  public environmentVariableProvider?: IEnvironmentVariableProvider;
 
   private _onDidChangeCwd = new EventEmitter<string>();
   readonly onDidChangeCwd = this._onDidChangeCwd.event;
@@ -55,6 +56,8 @@ export class Shell extends Disposable implements ShellApi {
     private readonly options?: Readonly<IShellOptions>
   ) {
     super();
+
+    registerEchoCommand(this);
   }
 
   async start() {
@@ -394,24 +397,24 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable {
-    if (this._fileSystemProvider) {
+    if (this.fileSystemProvider) {
       throw new Error('Multiple file system providers not supported');
     }
-    this._fileSystemProvider = fileSystemProvider;
+    this.fileSystemProvider = fileSystemProvider;
     const attached = attachFileSystemProvider(this, fileSystemProvider);;
     return getDisposeArrayDisposable([
       attached,
-      toDisposable(() => this._fileSystemProvider = undefined)
+      toDisposable(() => this.fileSystemProvider = undefined)
     ]);
   }
 
   registerEnvironmentVariableProvider(environmentVariableProvider: IEnvironmentVariableProvider): IDisposable {
-    if (this._environmentVariableProvider) {
+    if (this.environmentVariableProvider) {
       throw new Error('Multiple environment variable providers not supported');
     }
-    this._environmentVariableProvider = environmentVariableProvider;
+    this.environmentVariableProvider = environmentVariableProvider;
     return getDisposeArrayDisposable([
-      toDisposable(() => this._environmentVariableProvider = undefined)
+      toDisposable(() => this.environmentVariableProvider = undefined)
     ]);
   }
 }
