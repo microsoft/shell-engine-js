@@ -1,6 +1,6 @@
 import { Shell } from '../out/shell.js';
 import { initHistory } from '../out/modules/history.js';
-import { initTabCompletion } from '../out/modules/tabCompletion.js';
+// import { initTabCompletion } from '../out/modules/tabCompletion.js';
 import { initHelp } from '../out/modules/help.js';
 import { initVscodeShellIntegration } from '../out/modules/vscodeShellIntegration.js';
 import { Terminal } from 'xterm';
@@ -34,9 +34,34 @@ const shell = new Shell({
 
 // Initialize all modules
 initHistory(shell);
-initTabCompletion(shell);
+// initTabCompletion(shell);
 initHelp(shell);
 initVscodeShellIntegration(shell);
+
+// Example of native autocomplete via communicating with shell
+initCustomTabCompletion(shell);
+const completionElement = document.createElement('div');
+document.body.appendChild(completionElement);
+terminal.parser.registerOscHandler(633, data => {
+  const [command, ...args] = data.split(';');
+  if (command === 'Completions') {
+    completionElement.innerHTML = 'Completions:<br>';
+    const completions = args[1].split('<CL>');
+    const fragment = new DocumentFragment();
+    for (const c of completions) {
+      const element = document.createElement('button');
+      element.innerText = c;
+      element.addEventListener('click', () => {
+        shell.write(c.substring(args[0].length));
+        completionElement.innerHTML = '';
+      });
+      fragment.appendChild(element);
+    }
+    completionElement.appendChild(fragment);
+    return true;
+  }
+  return false
+});
 
 // Set prompt and register some prompt variables
 shell.prompt = '\x1b[1;34m${hostname}\x1b[39m@\x1b[32m${time}\x1b[39m>\x1b[0m ';
@@ -59,3 +84,26 @@ document.querySelector('#enable-debug-logs').addEventListener('click', () => ter
 // Setup globals for debugging
 window.term = terminal;
 window.shell = shell;
+
+
+
+function initCustomTabCompletion(shell) {
+  return shell.onDidPressTab(() => {
+    const input = shell.promptInput;
+
+    // Get all possible completions matching the first part of the command
+    let completions = [];
+    for (const name of shell.commands.commandNames) {
+      if (name.startsWith(input)) {
+        completions.push(name);
+      }
+    }
+
+    // Return early
+    if (completions.length === 0) {
+      return;
+    }
+
+    shell.write(`\x1b]633;Completions;${input};${completions.join('<CL>')}\x07`);
+  });
+}
