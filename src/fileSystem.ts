@@ -1,72 +1,13 @@
 import { isAbsolute, join, resolve } from "./path.js";
 import { IDisposable, IFileSystemProvider, Shell } from "./types.js";
 import * as minimist from 'minimist';
+import { createCdCommand } from "./builtins/cd.js";
+import { FileType } from './constants.js';
 
-// Implemented using this standard:
-// https://pubs.opengroup.org/onlinepubs/9699919799/utilities/cd.html
 export function attachFileSystemProvider(shell: Shell, fileSystemProvider: IFileSystemProvider): IDisposable {
   // TODO: Move to using $PWD for cwd
   shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
-  shell.commands.registerCommand('cd', {
-    async run(write, ...args) {
-      // Usage:
-      //   cd [-L|-P] [directory]
-      //   cd -
-      const parsedArgs = minimist(args, {
-        boolean: [
-          'L',
-          'P'
-        ]
-      });
-
-      // TODO: Support resolving symlinks
-      // let resolveSymlinks = false;
-      // if (parsedArgs.L) {
-      //   resolveSymlinks = false;
-      // } else if (parsedArgs.P) {
-      //   resolveSymlinks = true;
-      // }
-
-      if (parsedArgs._.length > 2) {
-        throw new Error('too many arguments');
-      }
-
-      let curpath: string;
-      if (parsedArgs._.length === 1) {
-        const home = shell.environmentVariableProvider?.get('HOME');
-        if (!home) {
-          throw new Error('HOME not set');
-        }
-        curpath = home;
-      } else {
-        const rawTarget = parsedArgs._[1];
-        if (rawTarget === '-') {
-          const oldpwd = shell.environmentVariableProvider?.get('OLDPWD');
-          if (!oldpwd) {
-            throw new Error('OLDPWD not set');
-          }
-          curpath = oldpwd;
-        } else {
-          // TODO: Support CDPATH
-          if (rawTarget.startsWith('/')) {
-            curpath = rawTarget;
-          } else {
-            curpath = join(fileSystemProvider.cwd, rawTarget);
-          }
-        }
-      }
-      const result = await fileSystemProvider.stat(curpath);
-      // TODO: Resolve symlinks
-      if (result.type !== FileType.Directory) {
-        write('not a directory\n\r');
-        return 1;
-      }
-      shell.environmentVariableProvider?.set('OLDPWD', fileSystemProvider.cwd);
-      // TODO: Move to $PWD
-      fileSystemProvider.cwd = curpath;
-      return 0;
-    },
-  });
+  shell.commands.registerCommand('cd', createCdCommand(shell));
   shell.commands.registerCommand('ls', {
     async run(write, ...args) {
       function formatFile(file: [string, FileType]): string {
@@ -138,11 +79,4 @@ export function attachFileSystemProvider(shell: Shell, fileSystemProvider: IFile
   });
   // TODO: Return disposable
   return null!;
-}
-
-const enum FileType {
-  Unknown = 0,
-  File = 1,
-  Directory = 2,
-  SymbolicLink = 64
 }
