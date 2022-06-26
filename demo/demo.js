@@ -38,31 +38,6 @@ initHistory(shell);
 initHelp(shell);
 initVscodeShellIntegration(shell);
 
-// Example of native autocomplete via communicating with shell
-initCustomTabCompletion(shell);
-const completionElement = document.createElement('div');
-document.body.appendChild(completionElement);
-terminal.parser.registerOscHandler(633, data => {
-  const [command, ...args] = data.split(';');
-  if (command === 'Completions') {
-    completionElement.innerHTML = 'Completions:<br>';
-    const completions = args[1].split('<CL>');
-    const fragment = new DocumentFragment();
-    for (const c of completions) {
-      const element = document.createElement('button');
-      element.innerText = c;
-      element.addEventListener('click', () => {
-        shell.write(c.substring(args[0].length));
-        completionElement.innerHTML = '';
-      });
-      fragment.appendChild(element);
-    }
-    completionElement.appendChild(fragment);
-    return true;
-  }
-  return false
-});
-
 // Set prompt and register some prompt variables
 shell.prompt = '\x1b[1;34m${hostname}\x1b[39m@\x1b[32m${time}\x1b[39m>\x1b[0m ';
 shell.setPromptVariable('hostname', 'my-pc');
@@ -87,6 +62,38 @@ window.shell = shell;
 
 
 
+// Example of native autocomplete via communicating with shell
+initCustomTabCompletion(shell);
+const completionElement = document.createElement('div');
+document.body.appendChild(completionElement);
+terminal.parser.registerOscHandler(633, data => {
+  const [command, ...args] = data.split(';');
+  if (command === 'P' && args[0] === 'CompletionsSupport?') {
+    shell.write('\x1b]633;P;Yes\x07');
+    return true;
+  }
+  if (command === 'Completions') {
+    completionElement.innerHTML = 'Completions:<br>';
+    const completions = args[1].split('<CL>');
+    const fragment = new DocumentFragment();
+    for (const c of completions) {
+      const element = document.createElement('button');
+      element.innerText = c;
+      element.addEventListener('click', () => {
+        shell.write(c.substring(args[0].length));
+        completionElement.innerHTML = '';
+        terminal.focus();
+      });
+      fragment.appendChild(element);
+    }
+    completionElement.appendChild(fragment);
+    return true;
+  }
+  return false
+});
+// Ask if completions are supported
+shell.writeOsc(633, 'P;CompletionsSupport?');
+
 function initCustomTabCompletion(shell) {
   return shell.onDidPressTab(() => {
     const input = shell.promptInput;
@@ -101,6 +108,7 @@ function initCustomTabCompletion(shell) {
 
     // Return early
     if (completions.length === 0) {
+      shell.write('\x07');
       return;
     }
 

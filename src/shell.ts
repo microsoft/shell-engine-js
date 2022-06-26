@@ -68,6 +68,13 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   write(data: string) {
+    // HACK: Handle 633 specially for prototype
+    if (data === '\x1b]633;P;Yes\x07') {
+      // In a real implementation, this would enable the sending of the completions
+      console.log('terminal confirmed it supports native shell-based autocomplete');
+      return;
+    }
+
     // TODO: This should read x characters from data, \u0002\u0002 for example doesn't get handled
     switch (data) {
       case '\u0003': // ctrl+C
@@ -133,9 +140,10 @@ export class Shell extends Disposable implements ShellApi {
         break;
       case '\u0009': // tab
 
-        if (this._cursor !== this.promptInput.length) {
-          throw new Error('NYI'); // TODO: Implement
-        }
+        // TODO: This not needed? Modules end up handling this
+        // if (this._cursor !== this.promptInput.length) {
+        //   throw new Error('NYI'); // TODO: Implement
+        // }
 
         this._onDidPressTab.fire();
         break;
