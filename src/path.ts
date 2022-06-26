@@ -41,6 +41,8 @@
  const CHAR_COLON = 58; /* : */
  const CHAR_QUESTION_MARK = 63; /* ? */
 
+ const process = {} as any;
+
  class ErrorInvalidArgType extends Error {
    code: 'ERR_INVALID_ARG_TYPE';
    constructor(name: string, expected: string, actual: unknown) {
