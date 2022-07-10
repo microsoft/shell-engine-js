@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "watch-tsc": "tsc -b -w ./tsconfig.json",
-    "watch-webpack": "webpack -c ./demo/webpack.config.js -w",
+    "watch-webpack": "webpack -c ./examples/xterm.js/webpack.config.js -w",
     "test": "mocha ./out/test/**/*.test.js --diff false --enable-source-maps"
   },
   "repository": {

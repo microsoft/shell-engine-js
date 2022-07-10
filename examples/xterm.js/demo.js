@@ -1,8 +1,8 @@
-import { Shell } from '../out/shell.js';
-import { initHistory } from '../out/modules/history.js';
-// import { initTabCompletion } from '../out/modules/tabCompletion.js';
-import { initHelp } from '../out/modules/help.js';
-import { initVscodeShellIntegration } from '../out/modules/vscodeShellIntegration.js';
+import { Shell } from '../../out/shell.js';
+import { initHistory } from '../../out/modules/history.js';
+// import { initTabCompletion } from '../../out/modules/tabCompletion.js';
+import { initHelp } from '../../out/modules/help.js';
+import { initVscodeShellIntegration } from '../../out/modules/vscodeShellIntegration.js';
 import { Terminal } from 'xterm';
 
 const terminal = new Terminal({
