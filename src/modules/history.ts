@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 import { ICommand, IDisposable, IExecutedCommand, Shell } from "../types.js";
 import { Disposable, disposeArray, toDisposable } from "../lifecycle.js";
 

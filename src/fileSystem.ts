@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 import { isAbsolute, join, resolve } from "./path.js";
 import { IDisposable, IFileSystemProvider, Shell } from "./types.js";
 import * as minimist from 'minimist';
