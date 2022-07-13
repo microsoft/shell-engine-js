@@ -166,7 +166,7 @@ export class Shell extends Disposable implements ShellApi {
             }
 
             if (char >= String.fromCharCode(0x20) && char <= String.fromCharCode(0x7B)) {
-              this._setPromptInput(this.promptInput + char);
+              this._setPromptInput(this.promptInput.slice(0, this._cursor) + char + this.promptInput.slice(this._cursor));
             }
             this._cursor += char.length;
             this._onDidWriteData.fire(char);
