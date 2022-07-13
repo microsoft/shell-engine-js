@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { isCharPrintable } from "./charCode.js";
 import { CommandRegistry } from "./commandRegistry.js";
 import { registerEchoCommand } from "./commands/echo.js";
 import { EventEmitter } from "./events.js";
@@ -152,16 +153,25 @@ export class Shell extends Disposable implements ShellApi {
 
         this._onDidPressTab.fire();
         break;
-      default: // Print all other characters for demo
-        if (this._cursor !== this.promptInput.length) {
-          this._onDidWriteData.fire('\x1b[@');
+      default:
+        if (data[0] === '\x1b') {
+          throw new Error(`Unrecognized escape sequence \\x1b${data.slice(1)}`);
         }
+        // Print all printable characters for demo
+        for (let i = 0; i < data.length; i++) {
+          let char = data[i];
+          if (isCharPrintable(char)) {
+            if (this._cursor !== this.promptInput.length) {
+              this._onDidWriteData.fire('\x1b[@');
+            }
 
-        if (data >= String.fromCharCode(0x20) && data <= String.fromCharCode(0x7B)) {
-          this._setPromptInput(this.promptInput + data);
+            if (char >= String.fromCharCode(0x20) && char <= String.fromCharCode(0x7B)) {
+              this._setPromptInput(this.promptInput + char);
+            }
+            this._cursor += char.length;
+            this._onDidWriteData.fire(char);
+          }
         }
-        this._cursor += data.length;
-        this._onDidWriteData.fire(data);
     }
   }
 
