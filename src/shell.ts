@@ -6,9 +6,10 @@
 import { isCharPrintable } from "./charCode.js";
 import { CommandRegistry } from "./commandRegistry.js";
 import { registerEchoCommand } from "./commands/echo.js";
-import { EventEmitter } from "./events.js";
+import { EventEmitter, forwardEvent } from "./events.js";
 import { attachFileSystemProvider } from "./fileSystem.js";
-import { Disposable, disposeArray, getDisposeArrayDisposable, toDisposable } from "./lifecycle.js";
+import { Disposable, getDisposeArrayDisposable, toDisposable } from "./lifecycle.js";
+import { Prompt } from "./prompt.js";
 import { ICommand, IDisposable, IEnvironmentVariableProvider, IFileSystemProvider, IShellOptions, Shell as ShellApi } from "./types.js";
 
 export interface IExecuteCommandEvent {
@@ -28,15 +29,12 @@ export class Shell extends Disposable implements ShellApi {
     rows: 0,
     columns: 0
   };
-  promptInput: string = '';
-  prompt: (() => Promise<string> | string) | string = 'js-shell-engine> ';
-
-  private _cursor: number = 0;
-  private readonly _promptVariables: Map<string, string | (() => string | Promise<string>)> = new Map();
 
   private readonly _commandRegistry = new CommandRegistry();
+  private readonly _prompt = new Prompt();
+
   get commands() { return this._commandRegistry; }
-  get promptInputCursorIndex() { return this._cursor; }
+  get prompt() { return this._prompt; }
 
   public fileSystemProvider?: IFileSystemProvider;
   public environmentVariableProvider?: IEnvironmentVariableProvider;
@@ -63,6 +61,11 @@ export class Shell extends Disposable implements ShellApi {
   ) {
     super();
 
+    this.register(forwardEvent(this._prompt.onBeforeWritePrompt, this._onBeforeWritePrompt));
+    this.register(forwardEvent(this._prompt.onDidChangePromptInput, this._onDidChangePromptInput));
+    this.register(forwardEvent(this._prompt.onDidWriteData, this._onDidWriteData));
+    this.register(forwardEvent(this._prompt.onDidWritePrompt, this._onDidWritePrompt));
+
     registerEchoCommand(this);
   }
 
@@ -70,10 +73,10 @@ export class Shell extends Disposable implements ShellApi {
     if (this.options?.welcomeMessage) {
       this._onDidWriteData.fire(this.options.welcomeMessage + '\n\r');
     }
-    await this._resetPromptInput(true);
+    await this._prompt.reset(true);
   }
 
-  write(data: string) {
+  async write(data: string) {
     // HACK: Handle 633 specially for prototype
     if (data === '\x1b]633;P;Yes\x07') {
       // In a real implementation, this would enable the sending of the completions
@@ -88,7 +91,7 @@ export class Shell extends Disposable implements ShellApi {
         const eventCommand = {
           name: '',
           argv: [''],
-          commandLine: this.promptInput
+          commandLine: this._prompt.input
         };
         this._onBeforeExecuteCommand.fire(eventCommand);
         this._onDidWriteData.fire('\x1b[31m^C\x1b[0m');
@@ -96,23 +99,23 @@ export class Shell extends Disposable implements ShellApi {
           command: eventCommand,
           exitCode: undefined
         });
-        this._resetPromptInput();
+        await this._prompt.reset();
         break;
       case '\r': // enter
-        this._runCommand(this.promptInput);
+        this._runCommand(this._prompt.input);
         break;
       case '\x08': // shift+backspace
       case '\x7F': // backspace (DEL)
-        if (this.promptInput.length > 0 && this._cursor > 0) {
-          this._onDidWriteData.fire('\b\x1b[P');
-          this._cursor--;
-          this._setPromptInput(this.promptInput.substring(0, this._cursor) + this.promptInput.substring(this._cursor + 1));
-        } else {
-          this._bell();
-        }
+        this._bellIfFalse(this._prompt.backspace());
+        // if (this._prompt.input.length > 0 && this._cursor > 0) {
+        //   this._onDidWriteData.fire('\b\x1b[P');
+        //   this._cursor--;
+        //   this._setPromptInput(this._prompt.input.substring(0, this._prompt.inputCursorIndex._cursor) + this._prompt.input.substring(this._cursor + 1));
+        // } else {
+        // }
         break;
       case '\x1b\x7f': // ctrl+backspace
-        this._deleteCursorWordLeft();
+        this._bellIfFalse(this._prompt.deleteCursorWordLeft());
         break;
       case '\x1b[A': // up
         this._bell();
@@ -122,32 +125,32 @@ export class Shell extends Disposable implements ShellApi {
         break;
       case '\x06': // ctrl+f
       case '\x1b[C': // right
-        this._setCursorPosition(this._cursor + 1);
+        this._bellIfFalse(this._prompt.moveCursorRelative(1));
         break;
       case '\x1bf': // alt+f
       case '\x1b[1;5C': // ctrl+right
-        this._moveCursorWordRight();
+        this._bellIfFalse(this._prompt.moveCursorWordRight());
         break;
       case '\x02': // ctrl+b
       case '\x1b[D': // left
-        this._setCursorPosition(this._cursor - 1);
+        this._bellIfFalse(this._prompt.moveCursorRelative(-1));
         break;
       case '\x1bb': // alt+b
       case '\x1b[1;5D': // ctrl+left
-        this._moveCursorWordLeft();
+        this._bellIfFalse(this._prompt.moveCursorWordLeft());
         break;
       case '\x01': // ctrl+a
       case '\x1b[H': // home
-        this._setCursorPosition(0);
+        this._bellIfFalse(this._prompt.moveCursor(0));
         break;
       case '\x05': // ctrl+e
       case '\x1b[F': // end
-        this._setCursorPosition(this.promptInput.length);
+        this._bellIfFalse(this._prompt.moveCursor(this._prompt.input.length));
         break;
       case '\x09': // tab
 
         // TODO: This not needed? Modules end up handling this
-        // if (this._cursor !== this.promptInput.length) {
+        // if (this._cursor !== this._prompt.input.length) {
         //   throw new Error('NYI'); // TODO: Implement
         // }
 
@@ -161,15 +164,7 @@ export class Shell extends Disposable implements ShellApi {
         for (let i = 0; i < data.length; i++) {
           let char = data[i];
           if (isCharPrintable(char)) {
-            if (this._cursor !== this.promptInput.length) {
-              this._onDidWriteData.fire('\x1b[@');
-            }
-
-            if (char >= String.fromCharCode(0x20) && char <= String.fromCharCode(0x7B)) {
-              this._setPromptInput(this.promptInput.slice(0, this._cursor) + char + this.promptInput.slice(this._cursor));
-            }
-            this._cursor += char.length;
-            this._onDidWriteData.fire(char);
+            this._bellIfFalse(this._prompt.insertChar(char));
           }
         }
     }
@@ -186,14 +181,6 @@ export class Shell extends Disposable implements ShellApi {
 
   registerCommand(name: string, command: ICommand): IDisposable {
     return this._commandRegistry.registerCommand(name, command);
-  }
-
-  setPromptVariable(variable: string, value: string | (() => string | Promise<string>) | undefined) {
-    if (value === undefined) {
-      this._promptVariables.delete(variable);
-    } else {
-      this._promptVariables.set(variable, value);
-    }
   }
 
   private async _runCommand(input: string) {
@@ -234,185 +221,13 @@ export class Shell extends Disposable implements ShellApi {
       command: eventCommand,
       exitCode
     });
-    await this._resetPromptInput();
+    await this._prompt.reset();
   }
 
-  private async _resetPromptInput(suppressNewLine: boolean = false) {
-    this._setPromptInput('');
-    this._cursor = 0;
-    this._onDidWriteData.fire(suppressNewLine ? '' : '\r\n');
-    this._onBeforeWritePrompt.fire();
-    this._onDidWriteData.fire(await this._getNewPromptString());
-    this._onDidWritePrompt.fire();
-  }
-
-  private _reprintPromptInput() {
-    const originalCursorPosition = this._cursor;
-    this._setCursorPosition(0);
-    this._onDidWriteData.fire('\x1b[K');
-    this._onDidWriteData.fire(this.promptInput);
-    this._cursor = this.promptInput.length;
-    this._setCursorPosition(originalCursorPosition);
-  }
-
-  private async _getNewPromptString(): Promise<string> {
-    const unresolved = typeof this.prompt === 'string' ? this.prompt : await this.prompt();
-    return this._resolveVariables(unresolved);
-  }
-
-  private async _resolveVariables(prompt: string): Promise<string> {
-    // TODO: Extracting should be done once when the prompt changes
-    // Extract variables to resolve
-    const vars: {
-      name: string;
-      start: number;
-      end: number;
-    }[] = [];
-    let state: 'normal' | 'dollar' | 'curly' = 'normal';
-    let earlyExit = false;
-    let start = -1;
-    for (let i = 0; i < prompt.length; i++) {
-      switch (state) {
-        case 'normal':
-          if (prompt[i] === '$') {
-            state = 'dollar';
-            start = i;
-          }
-          break;
-        case 'dollar':
-          if (prompt[i] === '{') {
-            state = 'curly';
-          } else if (prompt[i] === '$') {
-            start = i;
-          } else {
-            state = 'normal';
-          }
-          break;
-        case 'curly':
-          const end = prompt.indexOf('}', i);
-          if (end === -1) {
-            earlyExit = true;
-          }
-          vars.push({
-            name: prompt.substring(start + 2, end),
-            start,
-            end: end + 1
-          });
-          i = end + 1;
-          state = 'normal';
-          break;
-      }
-      if (earlyExit) {
-        break;
-      }
-    }
-
-    // Nothing to resolve
-    if (vars.length === 0) {
-      return prompt;
-    }
-
-    // Resolve all variables asynchronously
-    const promises: Promise<{ variable: string, result: string | undefined }>[] = [];
-    for (let i = 0; i < vars.length; i++) {
-      promises.push(this._resolveVariable(vars[i].name).then(result => ({
-        variable: vars[i].name,
-        result
-      })));
-    }
-    const results = await Promise.all(promises);
-
-    // TODO: Could be optimized
-    // Replace variables in prompt string, in reverse order to avoid shifting indexes
-    for (let i = results.length - 1; i >= 0; i--) {
-      const result = results[i];
-      if (result.result === undefined) {
-        console.warn(`Could not resolve variable ${result.variable}`);
-        continue;
-      }
-      prompt = `${prompt.substring(0, vars[i].start)}${result.result}${prompt.substring(vars[i].end)}`;
-    }
-
-    return prompt;
-  }
-
-  private async _resolveVariable(variable: string): Promise<string | undefined> {
-    const promptVariable = this._promptVariables.get(variable);
-    if (promptVariable === undefined || typeof promptVariable === 'string') {
-      return promptVariable;
-    }
-    return promptVariable();
-  }
-
-  private _setPromptInput(text: string) {
-    if (this.promptInput !== text) {
-      this.promptInput = text;
-      this._onDidChangePromptInput.fire(text);
-    }
-  }
-
-  private _setCursorPosition(position: number) {
-    if (position < 0 || position > this.promptInput.length) {
-      return;
-    }
-    if (this._cursor !== position) {
-      const change = this._cursor - position;
-      const code = change > 0 ? 'D' : 'C';
-      const sequence = `\x1b[${code}`.repeat(Math.abs(change));
-      this._onDidWriteData.fire(sequence);
-      this._cursor = position;
-    }
-  }
-
-  private _moveCursorWordLeft() {
-    if (this._cursor === 0) {
+  private _bellIfFalse(result: boolean) {
+    if (!result) {
       this._bell();
-      return;
     }
-    let position = this._cursor;
-    // Skip any adjacent whitespace
-    while (position > 0 && this.promptInput[position - 1] === ' ') {
-      position--;
-    }
-    while (position > 0 && this.promptInput[position - 1] !== ' ') {
-      position--;
-    }
-    this._setCursorPosition(position);
-  }
-
-  private _moveCursorWordRight() {
-    if (this._cursor === this.promptInput.length - 1) {
-      this._bell();
-      return;
-    }
-    let position = this._cursor;
-    // Skip any adjacent whitespace
-    while (position < this.promptInput.length - 1 && this.promptInput[position + 1] === ' ') {
-      position++;
-    }
-    while (position < this.promptInput.length - 1 && this.promptInput[position + 1] !== ' ') {
-      position++;
-    }
-    this._setCursorPosition(position);
-  }
-
-  private _deleteCursorWordLeft() {
-    if (this._cursor === this.promptInput.length - 1) {
-      this._bell();
-      return;
-    }
-
-    let position = this._cursor;
-    while (position > 0 && this.promptInput[position - 1] === ' ') {
-      position--;
-    }
-    while (position > 0 && this.promptInput[position - 1] !== ' ') {
-      position--;
-    }
-    const charCount = this._cursor - position
-    this._onDidWriteData.fire('\b\x1b[P'.repeat(charCount));
-    this._setPromptInput(this.promptInput.substring(0, position) + this.promptInput.substring(this._cursor));
-    this._cursor -= charCount;
   }
 
   private _bell() {

@@ -37,22 +37,6 @@ export class Shell implements IDisposable {
     readonly columns: number;
   };
 
-  /**
-   * The text being input into the prompt.
-   */
-  readonly promptInput: string;
-
-  /**
-   * The index of the cursor within {@link promptInput}.
-   */
-  readonly promptInputCursorIndex: number;
-
-  /**
-   * Gets or sets the prompt function or string. When this is a string it is printed directly to
-   * the prompt similar to how $PS1 works, when this is a function the return value is printed.
-   */
-  prompt: (() => Promise<string> | string) | string;
-
   readonly fileSystemProvider?: IFileSystemProvider;
   readonly environmentVariableProvider?: IEnvironmentVariableProvider;
 
@@ -77,6 +61,8 @@ export class Shell implements IDisposable {
    * Contains APIs related to managing commands.
    */
   readonly commands: ICommandsNamespace;
+
+  readonly prompt: IPromptNamespace;
 
   /**
    * Creates a new shell object.
@@ -109,11 +95,6 @@ export class Shell implements IDisposable {
   resize(cols: number, rows: number): void;
 
   /**
-   * Sets a variable's value to be used by the prompt.
-   */
-  setPromptVariable(variable: string, value: string | (() => string) | undefined): void;
-
-  /**
    * Register a file system to use with the shell.
    */
   registerFileSystemProvider(fileSystemProvider: IFileSystemProvider): IDisposable;
@@ -134,6 +115,29 @@ export interface ICommandsNamespace {
    * Registers a command to the shell.
    */
   registerCommand(name: string, command: ICommand): IDisposable;
+}
+
+export interface IPromptNamespace {
+  /**
+   * The text being input into the prompt.
+   */
+  readonly input: string;
+
+  /**
+   * The index of the cursor within {@link input}.
+   */
+  readonly inputCursorIndex: number;
+
+  /**
+   * Gets or sets the prompt function or string. When this is a string it is printed directly to
+   * the prompt similar to how $PS1 works, when this is a function the return value is printed.
+   */
+  prompt: (() => Promise<string> | string) | string;
+
+  /**
+   * Sets a variable's value to be used by the prompt.
+   */
+  setPromptVariable(variable: string, value: string | (() => string) | undefined): void;
 }
 
 export interface IExecuteCommandEvent {

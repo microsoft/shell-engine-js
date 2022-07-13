@@ -12,7 +12,6 @@ export class CommandRegistry extends Disposable {
   get commandNames() { return this.commands.keys(); }
 
   registerCommand(name: string, command: ICommand) {
-    console.log(`Registered command ${name}`);
     this.commands.set(name, command);
     return toDisposable(() => this._removeCommand(name, command));
   }

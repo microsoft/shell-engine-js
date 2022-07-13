@@ -39,9 +39,9 @@ initHelp(shell);
 initVscodeShellIntegration(shell);
 
 // Set prompt and register some prompt variables
-shell.prompt = '\x1b[1;34m${hostname}\x1b[39m@\x1b[32m${time}\x1b[39m>\x1b[0m ';
-shell.setPromptVariable('hostname', 'my-pc');
-shell.setPromptVariable('time', () => {
+shell.prompt.prompt = '\x1b[1;34m${hostname}\x1b[39m@\x1b[32m${time}\x1b[39m>\x1b[0m ';
+shell.prompt.setPromptVariable('hostname', 'my-pc');
+shell.prompt.setPromptVariable('time', () => {
   const now = new Date();
   return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 })

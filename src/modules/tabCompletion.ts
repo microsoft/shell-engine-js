@@ -7,7 +7,7 @@ import { IDisposable, Shell } from "../types.js";
 
 export function initTabCompletion(shell: Shell): IDisposable {
   return shell.onDidPressTab(() => {
-    const input = shell.promptInput;
+    const input = shell.prompt.input;
 
     // Get all possible completions matching the first part of the command
     let completions: string[] = [];

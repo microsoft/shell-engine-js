@@ -11,7 +11,7 @@ import { FileType } from './constants.js';
 
 export function attachFileSystemProvider(shell: Shell, fileSystemProvider: IFileSystemProvider): IDisposable {
   // TODO: Move to using $PWD for cwd
-  shell.setPromptVariable('cwd', () => fileSystemProvider.cwd);
+  shell.prompt.setPromptVariable('cwd', () => fileSystemProvider.cwd);
   shell.commands.registerCommand('cd', createCdCommand(shell));
   shell.commands.registerCommand('ls', {
     async run(write, ...args) {
