@@ -53,8 +53,21 @@ shell.onDidWriteData(e => terminal.write(e));
 // Start the shell
 shell.start();
 
-// Hook up demo buttons
-document.querySelector('#enable-debug-logs').addEventListener('click', () => terminal.options.logLevel = 'debug');
+
+
+// Demo buttons
+function setupDebugButtons() {
+  document.querySelector('#enable-debug-logs').addEventListener('click', () => terminal.options.logLevel = 'debug');
+}
+setupDebugButtons();
+
+// Demo debug info
+function setupDebugInfo() {
+  const element = document.querySelector('#debug-prompt');
+  shell.onDidChangePromptInput(e => element.innerHTML = e.replace(/\s/g, '&nbsp;'));
+}
+setupDebugInfo();
+
 
 // Setup globals for debugging
 window.term = terminal;
@@ -63,55 +76,55 @@ window.shell = shell;
 
 
 // Example of native autocomplete via communicating with shell
-initCustomTabCompletion(shell);
-const completionElement = document.createElement('div');
-document.body.appendChild(completionElement);
-terminal.parser.registerOscHandler(633, data => {
-  const [command, ...args] = data.split(';');
-  if (command === 'P' && args[0] === 'CompletionsSupport?') {
-    shell.write('\x1b]633;P;Yes\x07');
-    return true;
-  }
-  if (command === 'Completions') {
-    completionElement.innerHTML = 'Completions:<br>';
-    const completions = args[1].split('<CL>');
-    const fragment = new DocumentFragment();
-    for (const c of completions) {
-      const element = document.createElement('button');
-      element.innerText = c;
-      element.addEventListener('click', () => {
-        shell.write(c.substring(args[0].length));
-        completionElement.innerHTML = '';
-        terminal.focus();
-      });
-      fragment.appendChild(element);
-    }
-    completionElement.appendChild(fragment);
-    return true;
-  }
-  return false
-});
-// Ask if completions are supported
-shell.writeOsc(633, 'P;CompletionsSupport?');
+// initCustomTabCompletion(shell);
+// const completionElement = document.createElement('div');
+// document.body.appendChild(completionElement);
+// terminal.parser.registerOscHandler(633, data => {
+//   const [command, ...args] = data.split(';');
+//   if (command === 'P' && args[0] === 'CompletionsSupport?') {
+//     shell.write('\x1b]633;P;Yes\x07');
+//     return true;
+//   }
+//   if (command === 'Completions') {
+//     completionElement.innerHTML = 'Completions:<br>';
+//     const completions = args[1].split('<CL>');
+//     const fragment = new DocumentFragment();
+//     for (const c of completions) {
+//       const element = document.createElement('button');
+//       element.innerText = c;
+//       element.addEventListener('click', () => {
+//         shell.write(c.substring(args[0].length));
+//         completionElement.innerHTML = '';
+//         terminal.focus();
+//       });
+//       fragment.appendChild(element);
+//     }
+//     completionElement.appendChild(fragment);
+//     return true;
+//   }
+//   return false
+// });
+// // Ask if completions are supported
+// shell.writeOsc(633, 'P;CompletionsSupport?');
 
-function initCustomTabCompletion(shell) {
-  return shell.onDidPressTab(() => {
-    const input = shell.promptInput;
+// function initCustomTabCompletion(shell) {
+//   return shell.onDidPressTab(() => {
+//     const input = shell.promptInput;
 
-    // Get all possible completions matching the first part of the command
-    let completions = [];
-    for (const name of shell.commands.commandNames) {
-      if (name.startsWith(input)) {
-        completions.push(name);
-      }
-    }
+//     // Get all possible completions matching the first part of the command
+//     let completions = [];
+//     for (const name of shell.commands.commandNames) {
+//       if (name.startsWith(input)) {
+//         completions.push(name);
+//       }
+//     }
 
-    // Return early
-    if (completions.length === 0) {
-      shell.write('\x07');
-      return;
-    }
+//     // Return early
+//     if (completions.length === 0) {
+//       shell.write('\x07');
+//       return;
+//     }
 
-    shell.write(`\x1b]633;Completions;${input};${completions.join('<CL>')}\x07`);
-  });
-}
+//     shell.write(`\x1b]633;Completions;${input};${completions.join('<CL>')}\x07`);
+//   });
+// }
