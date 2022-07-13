@@ -77,14 +77,7 @@ export class Shell extends Disposable implements ShellApi {
   }
 
   async write(data: string) {
-    // HACK: Handle 633 specially for prototype
-    if (data === '\x1b]633;P;Yes\x07') {
-      // In a real implementation, this would enable the sending of the completions
-      console.log('terminal confirmed it supports native shell-based autocomplete');
-      return;
-    }
-
-    // TODO: This should read x characters from data, \x02\x02 for example doesn't get handled
+    // TODO: This should change to a parser with a state machine so it reads a single characters at a time, \x02\x02 for example doesn't get handled
     switch (data) {
       case '\x03': // ctrl+C
         // ^C is treated like a command
@@ -142,12 +135,6 @@ export class Shell extends Disposable implements ShellApi {
         this._bellIfFalse(this._prompt.moveCursor(this._prompt.input.length));
         break;
       case '\x09': // tab
-
-        // TODO: This not needed? Modules end up handling this
-        // if (this._cursor !== this._prompt.input.length) {
-        //   throw new Error('NYI'); // TODO: Implement
-        // }
-
         this._onDidPressTab.fire();
         break;
       default:
