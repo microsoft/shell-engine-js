@@ -107,12 +107,6 @@ export class Shell extends Disposable implements ShellApi {
       case '\x08': // shift+backspace
       case '\x7F': // backspace (DEL)
         this._bellIfFalse(this._prompt.backspace());
-        // if (this._prompt.input.length > 0 && this._cursor > 0) {
-        //   this._onDidWriteData.fire('\b\x1b[P');
-        //   this._cursor--;
-        //   this._setPromptInput(this._prompt.input.substring(0, this._prompt.inputCursorIndex._cursor) + this._prompt.input.substring(this._cursor + 1));
-        // } else {
-        // }
         break;
       case '\x1b\x7f': // ctrl+backspace
         this._bellIfFalse(this._prompt.deleteCursorWordLeft());
@@ -162,10 +156,7 @@ export class Shell extends Disposable implements ShellApi {
         }
         // Print all printable characters for demo
         for (let i = 0; i < data.length; i++) {
-          let char = data[i];
-          if (isCharPrintable(char)) {
-            this._bellIfFalse(this._prompt.insertChar(char));
-          }
+          this._bellIfFalse(this._prompt.insertChar(data[i]));
         }
     }
   }
