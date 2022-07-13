@@ -1416,11 +1416,6 @@ xterm-headless@^4.18.0:
   resolved "https://registry.yarnpkg.com/xterm-headless/-/xterm-headless-4.18.0.tgz#b37566715ecee02dc397c72d644c4c493a25ca84"
   integrity sha512-VwSPG2cyVOwesVVLBVrybYNY6cUMiVkD2fLnIXcBs/1iJ3M7bhD3lP9HdQOHGtOkbxV2Duf7MZNmEfngBXL/iQ==
 
-xterm@4.16:
-  version "4.16.0"
-  resolved "https://registry.yarnpkg.com/xterm/-/xterm-4.16.0.tgz#af25223c72917438842121e1bcd1b60ffd7e8476"
-  integrity sha512-nAbuigL9CYkI075mdfqpnB8cHZNKxENCj1CQ9Tm5gSvWkMtkanmRN2mkHGjSaET1/3+X9BqISFFo7Pd2mXVjiQ==
-
 y18n@^5.0.5:
   version "5.0.8"
   resolved "https://registry.yarnpkg.com/y18n/-/y18n-5.0.8.tgz#7f4934d0f7ca8c56f95314939ddcd2dd91ce1d55"

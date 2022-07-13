@@ -3,8 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Tyriar/web-shell-engine.git"
@@ -16,5 +15,6 @@
   },
   "homepage": "https://github.com/Tyriar/web-shell-engine#readme",
   "devDependencies": {
+    "xterm": "^4.19.0"
   }
 }
