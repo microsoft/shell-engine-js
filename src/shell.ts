@@ -80,9 +80,9 @@ export class Shell extends Disposable implements ShellApi {
       return;
     }
 
-    // TODO: This should read x characters from data, \u0002\u0002 for example doesn't get handled
+    // TODO: This should read x characters from data, \x02\x02 for example doesn't get handled
     switch (data) {
-      case '\u0003': // ctrl+C
+      case '\x03': // ctrl+C
         // ^C is treated like a command
         const eventCommand = {
           name: '',
@@ -100,8 +100,8 @@ export class Shell extends Disposable implements ShellApi {
       case '\r': // enter
         this._runCommand(this.promptInput);
         break;
-      case '\u0008': // shift+backspace
-      case '\u007F': // backspace (DEL)
+      case '\x08': // shift+backspace
+      case '\x7F': // backspace (DEL)
         if (this.promptInput.length > 0 && this._cursor > 0) {
           this._onDidWriteData.fire('\b\x1b[P');
           this._cursor--;
@@ -110,40 +110,40 @@ export class Shell extends Disposable implements ShellApi {
           this._bell();
         }
         break;
-      case '\u001b\u007f': // ctrl+backspace
+      case '\x1b\x7f': // ctrl+backspace
         this._deleteCursorWordLeft();
         break;
-      case '\u001b[A': // up
+      case '\x1b[A': // up
         this._bell();
         break;
-      case '\u001b[B': // down
+      case '\x1b[B': // down
         this._bell();
         break;
-      case '\u0006': // ctrl+f
-      case '\u001b[C': // right
+      case '\x06': // ctrl+f
+      case '\x1b[C': // right
         this._setCursorPosition(this._cursor + 1);
         break;
-      case '\u001bf': // alt+f
-      case '\u001b[1;5C': // ctrl+right
+      case '\x1bf': // alt+f
+      case '\x1b[1;5C': // ctrl+right
         this._moveCursorWordRight();
         break;
-      case '\u0002': // ctrl+b
-      case '\u001b[D': // left
+      case '\x02': // ctrl+b
+      case '\x1b[D': // left
         this._setCursorPosition(this._cursor - 1);
         break;
-      case '\u001bb': // alt+b
-      case '\u001b[1;5D': // ctrl+left
+      case '\x1bb': // alt+b
+      case '\x1b[1;5D': // ctrl+left
         this._moveCursorWordLeft();
         break;
-      case '\u0001': // ctrl+a
-      case '\u001b[H': // home
+      case '\x01': // ctrl+a
+      case '\x1b[H': // home
         this._setCursorPosition(0);
         break;
-      case '\u0005': // ctrl+e
-      case '\u001b[F': // end
+      case '\x05': // ctrl+e
+      case '\x1b[F': // end
         this._setCursorPosition(this.promptInput.length);
         break;
-      case '\u0009': // tab
+      case '\x09': // tab
 
         // TODO: This not needed? Modules end up handling this
         // if (this._cursor !== this.promptInput.length) {
@@ -348,7 +348,7 @@ export class Shell extends Disposable implements ShellApi {
     if (this._cursor !== position) {
       const change = this._cursor - position;
       const code = change > 0 ? 'D' : 'C';
-      const sequence = `\u001b[${code}`.repeat(Math.abs(change));
+      const sequence = `\x1b[${code}`.repeat(Math.abs(change));
       this._onDidWriteData.fire(sequence);
       this._cursor = position;
     }

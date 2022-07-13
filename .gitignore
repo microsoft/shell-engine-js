@@ -1,4 +1,4 @@
 .DS_Store
 out/
 node_modules/
-demo/demo.bundle.js
+demo.bundle.js
