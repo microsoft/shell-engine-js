@@ -5,6 +5,7 @@
 
 export {
   ICommand,
+  ICommandParser,
   IDisposable,
   IEnvironmentVariableProvider,
   IEvent,

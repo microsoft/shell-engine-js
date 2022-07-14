@@ -115,6 +115,40 @@ export interface ICommandsNamespace {
    * Registers a command to the shell.
    */
   registerCommand(name: string, command: ICommand): IDisposable;
+
+  /**
+   * Registers a command handler which will be asked to handle the command before the builtin parser
+   * handles it and can prevent bubbling of the command event. Registered parsers are run in order
+   * of most recently registered.
+   */
+  registerCommandHandler(commandParser: ICommandParser): IDisposable;
+}
+
+export interface ICommandParser {
+  /**
+   * Parse and run the provided command line.
+   *
+   * Return `undefined` to not handle and bubble the event to the next handler.
+   *
+   * @param input The current command line that has been input into the prompt.
+   * @param argv The current command line parsed into an argv object using the builtin parser.
+   */
+  run(input: string, ...argv: string[]): Promise<IExecutedCommandParserCommand> | IExecutedCommandParserCommand | undefined;
+
+  /**
+   * Whether the command line in its current state should wrap to a new line. This should be handled
+   * when this handler is expected to handle the command line.
+   *
+   * Return `undefined` to not handle and bubble the event to the next parser.
+   *
+   * @param input The current command line that has been input into the prompt.
+   */
+  shouldWrap(input: string): boolean | undefined;
+}
+
+export interface IExecutedCommandParserCommand {
+  command: IExecutedCommand;
+  exitCode: Promise<number> | number;
 }
 
 export interface IPromptNamespace {

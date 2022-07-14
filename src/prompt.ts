@@ -10,7 +10,7 @@ import { clamp } from "./number";
 export class Prompt {
   prompt: (() => Promise<string> | string) | string = 'shell-engine> ';
 
-  private _inputStartIndex: number = 0;
+  // private _inputStartIndex: number = 0;
   private _inputCursorIndex: number = 0;
   private _input: string = '';
 
@@ -18,11 +18,6 @@ export class Prompt {
 
   get input(): string { return this._input; }
   get inputCursorIndex(): number { return this._inputCursorIndex; }
-
-  // /**
-  //  * The index of the cursor within {@link input}.
-  //  */
-  // readonly inputCursorIndex: number;
 
   private _onDidChangePromptInput = new EventEmitter<string>();
   readonly onDidChangePromptInput = this._onDidChangePromptInput.event;
