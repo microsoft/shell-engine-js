@@ -82,7 +82,7 @@ window.shell = shell;
 // Example of custom command handler
 shell.commands.registerCommandHandler({
   handleCommand(input, ...argv) {
-    if (argv[0] === 'custom') {
+    if (input.includes('&&')) {
       return {
         command: {
           name: argv[0],
@@ -90,15 +90,37 @@ shell.commands.registerCommandHandler({
           commandLine: input
         },
         async run(write) {
-          write(`Custom command running: ["${argv.join('", "')}"]`);
+          const commandLines = input.split('&&');
+          for (const c of commandLines) {
+            const innerArgv = c.trim().split(' ');
+            const name = innerArgv[0];
+            const exitCode = await shell.commands.commands.get(name).run(write, ...innerArgv);
+            if (exitCode !== 0) {
+              return exitCode;
+            }
+          }
           return 0;
         }
       };
     }
+    // if (argv[0] === 'custom') {
+    //   return {
+    //     command: {
+    //       name: argv[0],
+    //       argv,
+    //       commandLine: input
+    //     },
+    //     async run(write) {
+    //       write(`Custom command running: ["${argv.join('", "')}"]`);
+    //       return 0;
+    //     }
+    //   };
+    // }
     return undefined;
   },
   shouldWrap(input) {
-    return input.split(' ')[0] === 'custom';
+    // Leave up to default
+    return undefined;
   }
 });
 

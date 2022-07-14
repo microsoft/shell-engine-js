@@ -178,7 +178,7 @@ export class Shell extends Disposable implements ShellApi {
 
       let customCommand: ICommandHandlerCommand | undefined;
       for (const handler of this.commands.commandHandlers) {
-        customCommand = handler.handleCommand(name, ...argv);
+        customCommand = handler.handleCommand(input, ...argv);
         if (customCommand) {
           break;
         }

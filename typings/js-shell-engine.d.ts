@@ -109,7 +109,8 @@ export interface IShellOptions {
 }
 
 export interface ICommandsNamespace {
-  commandNames: IterableIterator<string>;
+  readonly commands: Map<string, ICommand>;
+  readonly commandNames: IterableIterator<string>;
 
   /**
    * Registers a command to the shell.
