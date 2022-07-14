@@ -5,6 +5,7 @@
 
 import { isCharPrintable } from "./charCode";
 import { EventEmitter } from "./events";
+import { clamp } from "./number";
 
 export class Prompt {
   prompt: (() => Promise<string> | string) | string = 'shell-engine> ';
@@ -45,6 +46,18 @@ export class Prompt {
     if (!isCharPrintable(char)) {
       return false;
     }
+    if (char === '\n') {
+      this._onDidWriteData.fire('\x1b[K\r\n');
+      if (this._inputCursorIndex !== this._input.length) {
+        // TODO: Reprint lines below properly
+        this._onDidWriteData.fire(this._input.slice(this._inputCursorIndex));
+        this._onDidWriteData.fire('\x1b[G');
+      }
+      this._setPromptInput(this._input.slice(0, this._inputCursorIndex) + char + this._input.slice(this._inputCursorIndex));
+      this._inputCursorIndex += char.length;
+      return true;
+    }
+
     // Shift cells right if not at the end
     if (this._inputCursorIndex !== this._input.length) {
       this._onDidWriteData.fire('\x1b[@');
@@ -58,6 +71,9 @@ export class Prompt {
   backspace(): boolean {
     if (this._input.length === 0 || this._inputCursorIndex === 0) {
       return false;
+    }
+    if (this._input[this._inputCursorIndex - 1] === '\n') {
+      throw new Error('Cannot backspace to previous lines yet');
     }
     this._onDidWriteData.fire('\b\x1b[P');
     this._inputCursorIndex--;
@@ -77,15 +93,36 @@ export class Prompt {
     if (position < 0 || position > this._input.length) {
       return false;
     }
-    if (this._inputCursorIndex === position) {
+    const clampedPosition = clamp(position, this._getNewLineBoundaryStart(), this._getNewLineBoundaryEnd());
+    if (this._inputCursorIndex === clampedPosition) {
       return false;
     }
-    const change = this._inputCursorIndex - position;
+    const change = this._inputCursorIndex - clampedPosition;
     const code = change > 0 ? 'D' : 'C';
     const sequence = `\x1b[${code}`.repeat(Math.abs(change));
     this._onDidWriteData.fire(sequence);
-    this._inputCursorIndex = position;
+    this._inputCursorIndex = clampedPosition;
     return true;
+  }
+
+  shouldContinueLine(): boolean {
+    let topLevelQuote: string | undefined;
+    let escapeChar = false
+    let char: string;
+    for (let i = 0; i < this._input.length; i++) {
+      char = this._input[i];
+      if (topLevelQuote) {
+        if (!escapeChar && char === topLevelQuote) {
+          topLevelQuote = undefined;
+        }
+      } else {
+        if (char === '\'' || char === '"') {
+          topLevelQuote = char;
+        }
+      }
+      escapeChar = (char === '\\');
+    }
+    return !!topLevelQuote;
   }
 
   private _setPromptInput(text: string) {
@@ -184,8 +221,45 @@ export class Prompt {
     return promptVariable();
   }
 
+  private _getNewLineBoundaryStart(): number {
+    let i = this._inputCursorIndex;
+    for (; i >= 0; i--) {
+      if (this._input[i] === '\n') {
+        break;
+      }
+    }
+    return i + 1;
+  }
+
+  private _getNewLineBoundaryEnd(): number {
+    let i = this._inputCursorIndex;
+    // <= because the cursor can be after the last input char
+    for (; i <= this._input.length; i++) {
+      if (this._input[i] === '\n') {
+        break;
+      }
+    }
+    return i - 1;
+  }
+
   moveCursorRelative(amount: number): boolean {
     return this.moveCursor(this._inputCursorIndex + amount);
+  }
+
+  moveCursorStartOfLine(): boolean {
+    const i = this._getNewLineBoundaryStart();
+    if (i === this._inputCursorIndex) {
+      return false;
+    }
+    return this.moveCursor(i);
+  }
+
+  moveCursorEndOfLine(): boolean {
+    const i = this._getNewLineBoundaryEnd();
+    if (i === this._inputCursorIndex) {
+      return false;
+    }
+    return this.moveCursor(i);
   }
 
   moveCursorWordLeft(): boolean {
@@ -193,15 +267,15 @@ export class Prompt {
       return false;
     }
     let position = this._inputCursorIndex;
+    const boundaryIndex = Math.max(this._getNewLineBoundaryStart(), 0);
     // Skip any adjacent whitespace
-    while (position > 0 && this._input[position - 1] === ' ') {
+    while (position > boundaryIndex && this._input[position - 1] === ' ') {
       position--;
     }
-    while (position > 0 && this._input[position - 1] !== ' ') {
+    while (position > boundaryIndex && this._input[position - 1] !== ' ') {
       position--;
     }
-    this.moveCursor(position);
-    return true;
+    return this.moveCursor(position);
   }
 
   moveCursorWordRight() {
@@ -209,15 +283,15 @@ export class Prompt {
       return false;
     }
     let position = this._inputCursorIndex;
+    const boundaryIndex = Math.max(this._getNewLineBoundaryEnd(), this._input.length - 1);
     // Skip any adjacent whitespace
-    while (position < this._input.length - 1 && this._input[position + 1] === ' ') {
+    while (position < boundaryIndex && this._input[position + 1] === ' ') {
       position++;
     }
-    while (position < this._input.length - 1 && this._input[position + 1] !== ' ') {
+    while (position < boundaryIndex && this._input[position + 1] !== ' ') {
       position++;
     }
-    this.moveCursor(position);
-    return true;
+    return this.moveCursor(position);
   }
 
   deleteCursorWordLeft() {
@@ -226,10 +300,11 @@ export class Prompt {
     }
 
     let position = this._inputCursorIndex;
-    while (position > 0 && this._input[position - 1] === ' ') {
+    const boundaryIndex = Math.max(this._getNewLineBoundaryStart(), 0);
+    while (position > boundaryIndex && this._input[position - 1] === ' ') {
       position--;
     }
-    while (position > 0 && this._input[position - 1] !== ' ') {
+    while (position > boundaryIndex && this._input[position - 1] !== ' ') {
       position--;
     }
     const charCount = this._inputCursorIndex - position

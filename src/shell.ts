@@ -95,7 +95,7 @@ export class Shell extends Disposable implements ShellApi {
         await this._prompt.reset();
         break;
       case '\r': // enter
-        this._runCommand(this._prompt.input);
+        this.handleEnter();
         break;
       case '\x08': // shift+backspace
       case '\x7F': // backspace (DEL)
@@ -128,11 +128,11 @@ export class Shell extends Disposable implements ShellApi {
         break;
       case '\x01': // ctrl+a
       case '\x1b[H': // home
-        this._bellIfFalse(this._prompt.moveCursor(0));
+        this._bellIfFalse(this._prompt.moveCursorStartOfLine());
         break;
       case '\x05': // ctrl+e
       case '\x1b[F': // end
-        this._bellIfFalse(this._prompt.moveCursor(this._prompt.input.length));
+        this._bellIfFalse(this._prompt.moveCursorEndOfLine());
         break;
       case '\x09': // tab
         this._onDidPressTab.fire();
@@ -159,6 +159,14 @@ export class Shell extends Disposable implements ShellApi {
 
   registerCommand(name: string, command: ICommand): IDisposable {
     return this._commandRegistry.registerCommand(name, command);
+  }
+
+  handleEnter() {
+    if (this._prompt.shouldContinueLine()) {
+      this._prompt.insertChar('\n');
+    } else {
+      this._runCommand(this._prompt.input);
+    }
   }
 
   private async _runCommand(input: string) {

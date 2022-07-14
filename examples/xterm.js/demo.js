@@ -64,7 +64,9 @@ setupDebugButtons();
 // Demo debug info
 function setupDebugInfo() {
   const promptElement = document.querySelector('#debug-prompt');
-  shell.onDidChangePromptInput(e => promptElement.innerHTML = e.replace(/\s/g, '&nbsp;'));
+  shell.onDidChangePromptInput(e => {
+    promptElement.innerHTML = e.replace(/ /g, '&nbsp;').replace(/\n/g, '<br>');
+  });
   const bellElement = document.querySelector('#debug-bell');
   terminal.onBell(() => bellElement.innerText = new Date().toLocaleTimeString());
 }
