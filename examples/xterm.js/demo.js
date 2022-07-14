@@ -79,6 +79,31 @@ window.shell = shell;
 
 
 
+// Example of custom command handler
+shell.commands.registerCommandHandler({
+  handleCommand(input, ...argv) {
+    if (argv[0] === 'custom') {
+      return {
+        command: {
+          name: argv[0],
+          argv,
+          commandLine: input
+        },
+        async run(write) {
+          write(`Custom command running: ["${argv.join('", "')}"]`);
+          return 0;
+        }
+      };
+    }
+    return undefined;
+  },
+  shouldWrap(input) {
+    return input.split(' ')[0] === 'custom';
+  }
+});
+
+
+
 // Example of native autocomplete via communicating with shell
 // initCustomTabCompletion(shell);
 // const completionElement = document.createElement('div');

@@ -3,14 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { isCharPrintable } from "./charCode.js";
 import { CommandRegistry } from "./commandRegistry.js";
 import { registerEchoCommand } from "./commands/echo.js";
 import { EventEmitter, forwardEvent } from "./events.js";
 import { attachFileSystemProvider } from "./fileSystem.js";
 import { Disposable, getDisposeArrayDisposable, toDisposable } from "./lifecycle.js";
 import { Prompt } from "./prompt.js";
-import { ICommand, IDisposable, IEnvironmentVariableProvider, IFileSystemProvider, IShellOptions, Shell as ShellApi } from "./types.js";
+import { ICommand, ICommandHandlerCommand, IDisposable, IEnvironmentVariableProvider, IFileSystemProvider, IShellOptions, Shell as ShellApi } from "./types.js";
 
 export interface IExecuteCommandEvent {
   command: IExecutedCommand;
@@ -176,25 +175,34 @@ export class Shell extends Disposable implements ShellApi {
     let eventCommand: IExecutedCommand;
     if (name.length > 0) {
       this._onDidWriteData.fire('\n\r');
+
+      let customCommand: ICommandHandlerCommand | undefined;
+      for (const handler of this.commands.commandHandlers) {
+        customCommand = handler.handleCommand(name, ...argv);
+        if (customCommand) {
+          break;
+        }
+      }
+
       const command = this._commandRegistry.commands.get(name);
-      eventCommand = {
+      eventCommand = customCommand?.command || {
         name,
         argv,
         commandLine: input
       };
       this._onBeforeExecuteCommand.fire(eventCommand);
-      if (command) {
+
+      if (customCommand) {
+        try {
+          exitCode = await customCommand.run(this._onDidWriteData.fire.bind(this._onDidWriteData));
+        } catch (e) {
+          exitCode = this._handleRunCommandError(name, e);
+        }
+      } else if (command) {
         try {
           exitCode = await command.run(this._onDidWriteData.fire.bind(this._onDidWriteData), ...argv);
         } catch (e) {
-          this._onDidWriteData.fire('\x1b[31m');
-          if (e && e instanceof Error) {
-            this._onDidWriteData.fire(`${name}: ${e.message}`);
-          } else {
-            this._onDidWriteData.fire(`${name}: failed`);
-          }
-          this._onDidWriteData.fire('\x1b[0m');
-          exitCode = -1;
+          exitCode = this._handleRunCommandError(name, e);
         }
       } else {
         this._onDidWriteData.fire(`${name}: command not found`);
@@ -208,6 +216,17 @@ export class Shell extends Disposable implements ShellApi {
       exitCode
     });
     await this._prompt.reset();
+  }
+
+  private _handleRunCommandError(name: string, error: unknown): number {
+    this._onDidWriteData.fire('\x1b[31m');
+    if (error && error instanceof Error) {
+      this._onDidWriteData.fire(`${name}: ${error.message}`);
+    } else {
+      this._onDidWriteData.fire(`${name}: failed`);
+    }
+    this._onDidWriteData.fire('\x1b[0m');
+    return -1;
   }
 
   private _bellIfFalse(result: boolean) {

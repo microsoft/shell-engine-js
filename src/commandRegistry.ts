@@ -9,10 +9,10 @@ import { Disposable, toDisposable } from './lifecycle.js';
 export class CommandRegistry extends Disposable {
   commands: Map<string, ICommand> = new Map();
 
-  private _commandParsers: ICommandParser[] = [];
+  private _commandHandlers: ICommandParser[] = [];
 
   get commandNames() { return this.commands.keys(); }
-  get commandParsers() { return this._commandParsers; }
+  get commandHandlers() { return this._commandHandlers; }
 
   registerCommand(name: string, command: ICommand) {
     this.commands.set(name, command);
@@ -20,7 +20,7 @@ export class CommandRegistry extends Disposable {
   }
 
   registerCommandHandler(commandParser: ICommandParser): IDisposable {
-    this._commandParsers.unshift(commandParser);
+    this._commandHandlers.unshift(commandParser);
     return toDisposable(() => this._removeCommandHandler(commandParser));
   }
 
@@ -32,6 +32,6 @@ export class CommandRegistry extends Disposable {
   }
 
   private _removeCommandHandler(commandParser: ICommandParser) {
-    this._commandParsers = this._commandParsers.filter(e => e !== commandParser);
+    this._commandHandlers = this._commandHandlers.filter(e => e !== commandParser);
   }
 }

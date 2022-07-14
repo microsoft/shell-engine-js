@@ -133,7 +133,7 @@ export interface ICommandParser {
    * @param input The current command line that has been input into the prompt.
    * @param argv The current command line parsed into an argv object using the builtin parser.
    */
-  run(input: string, ...argv: string[]): Promise<IExecutedCommandParserCommand> | IExecutedCommandParserCommand | undefined;
+  handleCommand(input: string, ...argv: string[]): ICommandHandlerCommand | undefined;
 
   /**
    * Whether the command line in its current state should wrap to a new line. This should be handled
@@ -146,9 +146,13 @@ export interface ICommandParser {
   shouldWrap(input: string): boolean | undefined;
 }
 
-export interface IExecutedCommandParserCommand {
+export interface ICommandHandlerCommand {
   command: IExecutedCommand;
-  exitCode: Promise<number> | number;
+  /**
+   * Starts the command, it should start running when this is called, not when this object is
+   * created.
+   */
+  run(write: (data: string) => void): Promise<number>;
 }
 
 export interface IPromptNamespace {
