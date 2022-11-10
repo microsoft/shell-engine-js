@@ -13,8 +13,8 @@ export function initVscodeShellIntegration(shell: Shell): IDisposable {
   disposables.push(shell.onBeforeExecuteCommand(() => shell.writeOsc(633, 'C')));
   disposables.push(shell.onDidExecuteCommand(e => {
     const sanitizedCommandLine = e.command.commandLine
-      .replace('\n', '<LF>')
-      .replace(';', '<CL>');
+      .replace(/\n/g, '<LF>')
+      .replace(/;/g, '<CL>');
     shell.writeOsc(633, `E;${sanitizedCommandLine}`);
     if (e.exitCode === undefined) {
       shell.writeOsc(633, `D`);
